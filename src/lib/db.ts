@@ -13,24 +13,21 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 let prismaClient: PrismaClient
-const databaseUrl = process.env.DATABASE_URL
 
-if (!databaseUrl) {
-  console.warn("WARNING: DATABASE_URL is not set. PrismaClient initialized with fallback (will throw on queries).")
-  prismaClient = new PrismaClient()
+// Standard fallback database URL to prevent crashes during static generation/builds
+const databaseUrl = process.env.DATABASE_URL || "postgresql://placeholder_user:placeholder_password@localhost:5432/placeholder_db"
+
+if (process.env.NODE_ENV === "production") {
+  const pool = new Pool({ connectionString: databaseUrl })
+  const adapter = new PrismaNeon(pool)
+  prismaClient = new PrismaClient({ adapter })
 } else {
-  if (process.env.NODE_ENV === "production") {
+  if (!globalForPrisma.prisma) {
     const pool = new Pool({ connectionString: databaseUrl })
     const adapter = new PrismaNeon(pool)
-    prismaClient = new PrismaClient({ adapter })
-  } else {
-    if (!globalForPrisma.prisma) {
-      const pool = new Pool({ connectionString: databaseUrl })
-      const adapter = new PrismaNeon(pool)
-      globalForPrisma.prisma = new PrismaClient({ adapter })
-    }
-    prismaClient = globalForPrisma.prisma
+    globalForPrisma.prisma = new PrismaClient({ adapter })
   }
+  prismaClient = globalForPrisma.prisma
 }
 
 export const prisma = prismaClient
