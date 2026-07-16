@@ -87,7 +87,7 @@ const customAdapter = {
 }
 
 if (!process.env.AUTH_SECRET) {
-  process.env.AUTH_SECRET = "super-secret-fallback-key-change-in-prod"
+  throw new Error("AUTH_SECRET no está configurado. Agrega esta variable en Cloudflare Pages → Settings → Environment variables.")
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -96,8 +96,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   providers: [
     Google({
-      clientId: process.env.AUTH_GOOGLE_ID || "mock-id",
-      clientSecret: process.env.AUTH_GOOGLE_SECRET || "mock-secret",
+      clientId: process.env.AUTH_GOOGLE_ID!,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
     }),
     Credentials({
       id: "credentials",
