@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "build:cloudflare": "next-on-pages"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
