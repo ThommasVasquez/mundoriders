@@ -2,10 +2,17 @@ import { PrismaClient } from "@prisma/client"
 import { Pool, neonConfig } from "@neondatabase/serverless"
 import { PrismaNeon } from "@prisma/adapter-neon"
 
-// Enable WebSocket connection fallback for Node.js (only in non-edge environments)
-if (process.env.NEXT_RUNTIME !== "edge") {
-  const ws = require("ws")
-  neonConfig.webSocketConstructor = ws
+// Cloudflare Workers tiene WebSocket nativo — no necesita el paquete ws.
+// En Node.js local (dev), WebSocket no existe nativamente, así que lo cargamos.
+if (typeof globalThis.WebSocket === "undefined") {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const ws = require("ws")
+    neonConfig.webSocketConstructor = ws
+  } catch {
+    // En CF Workers con nodejs_compat, require de paquetes npm no aplica.
+    // Si llegamos aquí es CF Workers y el WebSocket nativo se usa automáticamente.
+  }
 }
 
 const globalForPrisma = globalThis as unknown as {
