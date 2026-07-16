@@ -1,10 +1,12 @@
 import { PrismaClient } from "@prisma/client"
 import { Pool, neonConfig } from "@neondatabase/serverless"
 import { PrismaNeon } from "@prisma/adapter-neon"
-import ws from "ws"
 
-// Enable WebSocket connection fallback for Node.js
-neonConfig.webSocketConstructor = ws
+// Enable WebSocket connection fallback for Node.js (only in non-edge environments)
+if (process.env.NEXT_RUNTIME !== "edge") {
+  const ws = require("ws")
+  neonConfig.webSocketConstructor = ws
+}
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
