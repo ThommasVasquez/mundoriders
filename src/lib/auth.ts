@@ -89,6 +89,8 @@ const customAdapter = {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: customAdapter,
   session: { strategy: "jwt" },
+  secret: process.env.AUTH_SECRET || "super-secret-fallback-key-change-in-prod",
+  trustHost: true,
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID || "mock-id",

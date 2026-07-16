@@ -13,18 +13,24 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 let prismaClient: PrismaClient
+const databaseUrl = process.env.DATABASE_URL
 
-if (process.env.NODE_ENV === "production") {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL })
-  const adapter = new PrismaNeon(pool)
-  prismaClient = new PrismaClient({ adapter })
+if (!databaseUrl) {
+  console.warn("WARNING: DATABASE_URL is not set. PrismaClient initialized with fallback (will throw on queries).")
+  prismaClient = new PrismaClient()
 } else {
-  if (!globalForPrisma.prisma) {
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+  if (process.env.NODE_ENV === "production") {
+    const pool = new Pool({ connectionString: databaseUrl })
     const adapter = new PrismaNeon(pool)
-    globalForPrisma.prisma = new PrismaClient({ adapter })
+    prismaClient = new PrismaClient({ adapter })
+  } else {
+    if (!globalForPrisma.prisma) {
+      const pool = new Pool({ connectionString: databaseUrl })
+      const adapter = new PrismaNeon(pool)
+      globalForPrisma.prisma = new PrismaClient({ adapter })
+    }
+    prismaClient = globalForPrisma.prisma
   }
-  prismaClient = globalForPrisma.prisma
 }
 
 export const prisma = prismaClient
