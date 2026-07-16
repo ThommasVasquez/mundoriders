@@ -86,10 +86,13 @@ const customAdapter = {
   },
 }
 
+if (!process.env.AUTH_SECRET) {
+  process.env.AUTH_SECRET = "super-secret-fallback-key-change-in-prod"
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: customAdapter,
   session: { strategy: "jwt" },
-  secret: process.env.AUTH_SECRET || "super-secret-fallback-key-change-in-prod",
   trustHost: true,
   providers: [
     Google({
