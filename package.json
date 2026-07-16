@@ -7,7 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "build:cloudflare": "opennextjs-cloudflare build && cp .open-next/worker.js .open-next/_worker.js && cp -r .open-next/assets/* .open-next/ && cp cloudflare_routes.json .open-next/_routes.json"
+    "build:cloudflare": "opennextjs-cloudflare build"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

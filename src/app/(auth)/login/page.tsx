@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -24,6 +24,22 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
   const [successMsg, setSuccessMsg] = useState("")
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const errorParam = params.get("error")
+      if (errorParam) {
+        if (errorParam === "CredentialsSignin") {
+          setErrorMsg("Credenciales incorrectas")
+        } else if (errorParam === "Configuration") {
+          setErrorMsg("Configuración de base de datos o credenciales incorrecta.")
+        } else {
+          setErrorMsg(`Error de inicio de sesión: ${errorParam}`)
+        }
+      }
+    }
+  }, [])
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault()
