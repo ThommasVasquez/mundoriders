@@ -11,19 +11,24 @@ const prismaAdapter = PrismaAdapter(prisma)
 const customAdapter = {
   ...prismaAdapter,
   async createUser(data: any) {
-    const { name, image, emailVerified, ...rest } = data
-    const user = await prisma.user.create({
-      data: {
-        ...rest,
-        nombre: name,
-        fotoPerfil: image,
-      },
-    })
-    return {
-      ...user,
-      name: user.nombre,
-      image: user.fotoPerfil,
-    } as any
+    try {
+      const { name, image, emailVerified, ...rest } = data
+      const user = await prisma.user.create({
+        data: {
+          ...rest,
+          nombre: name,
+          fotoPerfil: image,
+        },
+      })
+      return {
+        ...user,
+        name: user.nombre,
+        image: user.fotoPerfil,
+      } as any
+    } catch (error) {
+      console.error("[Auth] createUser DB error:", error)
+      throw error
+    }
   },
   async updateUser(data: any) {
     const { id, name, image, emailVerified, ...rest } = data
@@ -62,13 +67,18 @@ const customAdapter = {
     }
   },
   async getUserByAccount(provider_providerAccountId: any) {
-    if (!prismaAdapter.getUserByAccount) return null
-    const user = await prismaAdapter.getUserByAccount(provider_providerAccountId)
-    if (!user) return null
-    return {
-      ...user,
-      name: (user as any).nombre,
-      image: (user as any).fotoPerfil,
+    try {
+      if (!prismaAdapter.getUserByAccount) return null
+      const user = await prismaAdapter.getUserByAccount(provider_providerAccountId)
+      if (!user) return null
+      return {
+        ...user,
+        name: (user as any).nombre,
+        image: (user as any).fotoPerfil,
+      }
+    } catch (error) {
+      console.error("[Auth] getUserByAccount DB error:", error)
+      throw error
     }
   },
   async getSessionAndUser(sessionToken: string) {
