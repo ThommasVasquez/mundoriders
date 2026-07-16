@@ -1,7 +1,8 @@
+export const runtime = "edge";
+
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { z } from "zod"
-import twilio from "twilio"
 
 const otpSchema = z.object({
   phone: z.string().min(8, "Número de teléfono no válido"),
@@ -52,18 +53,32 @@ export async function POST(req: Request) {
 
     if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_PHONE_NUMBER) {
       try {
-        const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
         const formattedPhone = phone.startsWith("+") ? phone : (phone.startsWith("57") ? `+${phone}` : `+57${phone}`)
-        
-        await client.messages.create({
-          body: `Tu código de verificación de Rider es: ${code}. Válido por 5 minutos.`,
-          from: TWILIO_PHONE_NUMBER,
-          to: formattedPhone,
-        })
-        console.log(`Real SMS sent successfully via Twilio to ${formattedPhone}`)
-        sentRealSms = true
+        const basicAuth = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`)
+        const response = await fetch(
+          `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              "Authorization": `Basic ${basicAuth}`
+            },
+            body: new URLSearchParams({
+              Body: `Tu código de verificación de Rider es: ${code}. Válido por 5 minutos.`,
+              From: TWILIO_PHONE_NUMBER,
+              To: formattedPhone,
+            })
+          }
+        )
+        if (response.ok) {
+          console.log(`Real SMS sent successfully via Twilio to ${formattedPhone}`)
+          sentRealSms = true
+        } else {
+          const errText = await response.text()
+          console.error("Twilio API error:", errText)
+        }
       } catch (smsError) {
-        console.error("Failed to send real SMS via Twilio:", smsError)
+        console.error("Failed to send real SMS via Twilio API:", smsError)
       }
     } else {
       console.log("Twilio credentials missing. Logging OTP to console (Dev Mode).")
