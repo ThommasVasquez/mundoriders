@@ -33,10 +33,23 @@ export async function GET() {
     }
   }
 
-  // Test 2: prisma simple query
+  // Test 2: prisma simple query and ad campaigns query
   try {
     const count = await prisma.user.count()
-    result.db = { ok: true, userCount: count }
+    let adsError = null
+    let adsCount = 0
+    try {
+      adsCount = await prisma.adCampaign.count()
+    } catch (ae: any) {
+      adsError = ae?.message || String(ae)
+    }
+
+    result.db = { 
+      ok: true, 
+      userCount: count,
+      adsCount,
+      adsError
+    }
   } catch (e: any) {
     result.db = {
       ok: false,
