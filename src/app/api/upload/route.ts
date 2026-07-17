@@ -56,8 +56,12 @@ export async function POST(req: Request) {
       : `https://${s3Bucket}.s3.amazonaws.com/${uniqueFilename}`
 
     return NextResponse.json({ success: true, url: publicUrl })
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error uploading file:", error)
-    return NextResponse.json({ error: "Error al subir el archivo" }, { status: 500 })
+    return NextResponse.json({ 
+      error: "Error al subir el archivo",
+      details: error?.message || String(error),
+      stack: error?.stack?.split("\n").slice(0, 3) || []
+    }, { status: 500 })
   }
 }
