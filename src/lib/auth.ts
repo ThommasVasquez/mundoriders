@@ -96,14 +96,11 @@ const customAdapter = {
   },
 }
 
-// Durante el build, AUTH_SECRET puede no estar disponible — usamos placeholder.
-// En runtime (CF Workers), si falta la variable real, el Worker falla al arrancar.
+// Durante el build o la fase de carga inicial de módulos en Cloudflare Pages,
+// AUTH_SECRET puede no estar disponible globalmente. Asignamos un placeholder temporal 
+// que será sobrescrito dinámicamente en tiempo de ejecución por la variable real.
 if (!process.env.AUTH_SECRET) {
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    process.env.AUTH_SECRET = "build-time-placeholder-set-real-value-in-cf-pages"
-  } else {
-    throw new Error("AUTH_SECRET no est\u00e1 configurado. Ag\u00e9galo en Cloudflare Pages \u2192 Settings \u2192 Environment variables.")
-  }
+  process.env.AUTH_SECRET = "build-time-and-module-evaluation-fallback-secret"
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({

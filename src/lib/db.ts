@@ -15,26 +15,35 @@ if (typeof globalThis.WebSocket === "undefined") {
   }
 }
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
+let prismaInstance: PrismaClient | null = null
 
-let prismaClient: PrismaClient
+export function getPrisma(): PrismaClient {
+  if (prismaInstance) {
+    return prismaInstance
+  }
 
-// Standard fallback database URL to prevent crashes during static generation/builds
-const databaseUrl = process.env.DATABASE_URL || "postgresql://placeholder_user:placeholder_password@localhost:5432/placeholder_db"
+  const databaseUrl = process.env.DATABASE_URL
+  if (!databaseUrl) {
+    // Phase of build or initial module loading when env vars are not bound yet
+    const placeholderUrl = "postgresql://placeholder_user:placeholder_password@localhost:5432/placeholder_db"
+    const pool = new Pool({ connectionString: placeholderUrl })
+    const adapter = new PrismaNeon(pool)
+    return new PrismaClient({ adapter })
+  }
 
-if (process.env.NODE_ENV === "production") {
   const pool = new Pool({ connectionString: databaseUrl })
   const adapter = new PrismaNeon(pool)
-  prismaClient = new PrismaClient({ adapter })
-} else {
-  if (!globalForPrisma.prisma) {
-    const pool = new Pool({ connectionString: databaseUrl })
-    const adapter = new PrismaNeon(pool)
-    globalForPrisma.prisma = new PrismaClient({ adapter })
-  }
-  prismaClient = globalForPrisma.prisma
+  prismaInstance = new PrismaClient({ adapter })
+  return prismaInstance
 }
 
-export const prisma = prismaClient
+export const prisma = new Proxy({} as PrismaClient, {
+  get(target, prop, receiver) {
+    const client = getPrisma()
+    const value = Reflect.get(client, prop)
+    if (typeof value === "function") {
+      return value.bind(client)
+    }
+    return value
+  }
+})
