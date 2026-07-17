@@ -27,8 +27,7 @@ const files = [
   'src/app/api/garage/status/route.ts',
   'src/app/api/garage/stories/route.ts',
   'src/app/api/garage/route.ts',
-  'src/app/api/upload/route.ts',
-  'src/app/(main)/garage/[username]/page.tsx'
+  'src/app/api/upload/route.ts'
 ];
 
 files.forEach(file => {
