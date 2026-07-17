@@ -2,14 +2,13 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
-
 export async function POST(req: Request) {
-  const session = await auth()
-  if (!session || !session.user) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
   try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
     const formData = await req.formData()
     const file = formData.get("file") as File | null
 

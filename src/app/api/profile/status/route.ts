@@ -4,12 +4,12 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 
 export async function GET() {
-  const session = await auth()
-  if (!session || !session.user || !session.user.id) {
-    return NextResponse.json({ activeStatus: null })
-  }
-
   try {
+    const session = await auth()
+    if (!session || !session.user || !session.user.id) {
+      return NextResponse.json({ activeStatus: null })
+    }
+
     const activeStatus = await prisma.userStatus.findFirst({
       where: {
         userId: session.user.id,
@@ -22,19 +22,19 @@ export async function GET() {
       },
     })
     return NextResponse.json({ activeStatus })
-  } catch (error) {
-    console.error("Error fetching status:", error)
-    return NextResponse.json({ error: "Error al obtener el estado" }, { status: 500 })
+  } catch (error: any) {
+    console.error("[Status API GET Error]:", error)
+    return NextResponse.json({ error: error.message || "Error al obtener el estado" }, { status: 500 })
   }
 }
 
 export async function POST(req: Request) {
-  const session = await auth()
-  if (!session || !session.user || !session.user.id) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
   try {
+    const session = await auth()
+    if (!session || !session.user || !session.user.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
     const body = await req.json()
     const { mediaUrl } = body
 
@@ -52,8 +52,8 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json({ success: true, status })
-  } catch (error) {
-    console.error("Error creating status:", error)
-    return NextResponse.json({ error: "Error al crear el estado" }, { status: 500 })
+  } catch (error: any) {
+    console.error("[Status API POST Error]:", error)
+    return NextResponse.json({ error: error.message || "Error al crear el estado" }, { status: 500 })
   }
 }

@@ -4,21 +4,24 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 
 export async function GET(request: Request) {
-  const session = await auth()
-  if (!session || !session.user || !session.user.id) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
-  const { searchParams } = new URL(request.url)
-  const targetUserId = searchParams.get("targetUserId")
-  const username = searchParams.get("username")
-
   try {
+    const session = await auth()
+    if (!session || !session.user || !session.user.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const targetUserId = searchParams.get("targetUserId")
+    const username = searchParams.get("username")
+
     let targetId = targetUserId
 
     // Resolve user ID by username if needed
     if (!targetId && username) {
       let cleanUsername = decodeURIComponent(username).trim()
+      if (cleanUsername.includes("%")) {
+        cleanUsername = decodeURIComponent(cleanUsername).trim()
+      }
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanUsername)
       if (isUuid) {
         targetId = cleanUsername
@@ -65,24 +68,27 @@ export async function GET(request: Request) {
       followersCount,
       followingCount,
     })
-  } catch (error) {
-    console.error("Error in follow GET api:", error)
-    return NextResponse.json({ error: "Error al verificar seguimiento" }, { status: 500 })
+  } catch (error: any) {
+    console.error("[Follow API GET Error]:", error)
+    return NextResponse.json({ error: error.message || "Error al verificar seguimiento" }, { status: 500 })
   }
 }
 
 export async function POST(request: Request) {
-  const session = await auth()
-  if (!session || !session.user || !session.user.id) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
   try {
+    const session = await auth()
+    if (!session || !session.user || !session.user.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
     const { targetUserId, username } = await request.json()
     let targetId = targetUserId
 
     if (!targetId && username) {
       let cleanUsername = decodeURIComponent(username).trim()
+      if (cleanUsername.includes("%")) {
+        cleanUsername = decodeURIComponent(cleanUsername).trim()
+      }
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanUsername)
       if (isUuid) {
         targetId = cleanUsername
@@ -154,8 +160,8 @@ export async function POST(request: Request) {
       followersCount,
       followingCount,
     })
-  } catch (error) {
-    console.error("Error toggling follow:", error)
-    return NextResponse.json({ error: "Error al actualizar seguimiento" }, { status: 500 })
+  } catch (error: any) {
+    console.error("[Follow API POST Error]:", error)
+    return NextResponse.json({ error: error.message || "Error al actualizar seguimiento" }, { status: 500 })
   }
 }

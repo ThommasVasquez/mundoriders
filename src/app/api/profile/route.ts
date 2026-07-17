@@ -18,18 +18,21 @@ const profileUpdateSchema = z.object({
 })
 
 export async function GET(req: Request) {
-  const session = await auth()
-  if (!session || !session.user) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
-  const { searchParams } = new URL(req.url)
-  const usernameParam = searchParams.get("username")
-
   try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(req.url)
+    const usernameParam = searchParams.get("username")
+
     let whereClause: any = { id: session.user.id }
     if (usernameParam) {
       let cleanUsername = decodeURIComponent(usernameParam).trim()
+      if (cleanUsername.includes("%")) {
+        cleanUsername = decodeURIComponent(cleanUsername).trim()
+      }
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanUsername)
       
       if (isUuid) {
@@ -40,6 +43,10 @@ export async function GET(req: Request) {
         }
         whereClause = { username: cleanUsername }
       }
+    }
+
+    if (whereClause.id === undefined && whereClause.username === undefined) {
+      return NextResponse.json({ error: "Identificador de usuario inválido" }, { status: 400 })
     }
 
     const userProfile = await prisma.user.findUnique({
@@ -93,19 +100,19 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json({ success: true, profile: userProfile })
-  } catch (error) {
-    console.error("Error fetching profile:", error)
-    return NextResponse.json({ error: "Error al obtener el perfil" }, { status: 500 })
+  } catch (error: any) {
+    console.error("[Profile API GET Error]:", error)
+    return NextResponse.json({ error: error.message || "Error al obtener el perfil" }, { status: 500 })
   }
 }
 
 export async function PUT(req: Request) {
-  const session = await auth()
-  if (!session || !session.user) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
   try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
     const body = await req.json()
     if (body.username) {
       body.username = body.username.trim()
@@ -160,8 +167,8 @@ export async function PUT(req: Request) {
       message: "Perfil actualizado correctamente",
       user: updatedUser,
     })
-  } catch (error) {
-    console.error("Error updating profile:", error)
-    return NextResponse.json({ error: "Error al actualizar el perfil" }, { status: 500 })
+  } catch (error: any) {
+    console.error("[Profile API PUT Error]:", error)
+    return NextResponse.json({ error: error.message || "Error al actualizar el perfil" }, { status: 500 })
   }
 }
