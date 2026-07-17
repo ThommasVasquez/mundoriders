@@ -43,7 +43,7 @@ type Message = {
   }
 }
 
-function ChatsContent() {
+function IntercomContent() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -85,7 +85,7 @@ function ChatsContent() {
   // Fetch all conversations
   const fetchConversations = async (selectId?: string) => {
     try {
-      const res = await fetch("/api/chat/conversations")
+      const res = await fetch("/api/intercom/conversations")
       const data = await res.json()
       if (data.success) {
         setConversations(data.conversations)
@@ -111,7 +111,7 @@ function ChatsContent() {
   const fetchMessages = async (conversationId: string) => {
     setLoadingMessages(true)
     try {
-      const res = await fetch(`/api/chat/messages?conversationId=${conversationId}`)
+      const res = await fetch(`/api/intercom/messages?conversationId=${conversationId}`)
       const data = await res.json()
       if (data.success) {
         setMessages(data.messages)
@@ -139,7 +139,7 @@ function ChatsContent() {
     setActiveConv(conv)
     fetchMessages(conv.id)
     // Update query param without full reload
-    router.push(`/chats?conversationId=${conv.id}`, { scroll: false })
+    router.push(`/intercom?conversationId=${conv.id}`, { scroll: false })
   }
 
   // Handle Send Message
@@ -157,7 +157,7 @@ function ChatsContent() {
     setSending(true)
 
     try {
-      const res = await fetch("/api/chat/messages", {
+      const res = await fetch("/api/intercom/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -204,7 +204,7 @@ function ChatsContent() {
 
       try {
         // We create a mock message in the database sent by the other participant
-        const res = await fetch("/api/chat/messages", {
+        const res = await fetch("/api/intercom/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -299,7 +299,7 @@ function ChatsContent() {
       const content = `[MEDIA:audio:Nota_de_voz.mp3:${durationStr}]Nota de voz`
       
       try {
-        const res = await fetch("/api/chat/messages", {
+        const res = await fetch("/api/intercom/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -375,14 +375,14 @@ function ChatsContent() {
             {/* Search header */}
             <div className="p-4 border-b border-white/5 space-y-3">
               <h1 className="text-base font-black text-white flex items-center gap-1.5 uppercase tracking-wide">
-                <MessageSquare className="text-primary-orange w-4 h-4" /> Chats Rider
+                <MessageSquare className="text-primary-orange w-4 h-4" /> Intercom Rider
               </h1>
               
               <div className="relative">
                 <Search className="absolute left-3 top-2.5 w-4 h-4 text-text-muted" />
                 <input
                   type="text"
-                  placeholder="Buscar chat..."
+                  placeholder="Buscar intercomunicación..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-neutral-900 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-white outline-none focus:border-primary-orange/50 transition-colors"
@@ -399,7 +399,7 @@ function ChatsContent() {
               ) : filteredConversations.length === 0 ? (
                 <div className="py-12 text-center text-text-muted text-xs space-y-1 opacity-60">
                   <MessageSquare className="w-8 h-8 mx-auto mb-2 text-text-muted opacity-40" />
-                  <p>No tienes chats activos.</p>
+                  <p>No tienes intercomunicaciones activas.</p>
                   <p className="text-[10px]">¡Escríbele a un vendedor o rider!</p>
                 </div>
               ) : (
@@ -436,7 +436,7 @@ function ChatsContent() {
                           <h4 className="text-xs font-black text-white truncate">{rUser.nombre || rUser.username}</h4>
                         </div>
                         <p className="text-[10px] text-text-muted truncate">
-                          {lastMsg ? lastMsg.contenido : "Iniciaste chat..."}
+                          {lastMsg ? lastMsg.contenido : "Iniciaste intercomunicación..."}
                         </p>
                       </div>
                     </button>
@@ -749,7 +749,7 @@ function ChatsContent() {
                 <div>
                   <h3 className="font-extrabold text-white">Mensajería Activa</h3>
                   <p className="text-xs text-text-muted mt-1 max-w-xs">
-                    Selecciona un chat activo del panel izquierdo o contacta a un rider para coordinar compras o rodadas.
+                    Selecciona una intercomunicación activa del panel izquierdo o contacta a un rider para coordinar compras o rodadas.
                   </p>
                 </div>
               </div>
@@ -944,7 +944,7 @@ function ChatsContent() {
   )
 }
 
-export default function ChatsPage() {
+export default function IntercomPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex flex-col bg-background">
@@ -954,7 +954,7 @@ export default function ChatsPage() {
         </div>
       </div>
     }>
-      <ChatsContent />
+      <IntercomContent />
     </Suspense>
   )
 }

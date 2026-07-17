@@ -306,14 +306,14 @@ export default function FeedPage() {
     if (chatLoading[pilotId]) return
     setChatLoading((prev) => ({ ...prev, [pilotId]: true }))
     try {
-      const res = await fetch("/api/chat/conversations", {
+      const res = await fetch("/api/intercom/conversations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ targetUserId: pilotId }),
       })
       const data = await res.json()
       if (data.success) {
-        router.push("/chats")
+        router.push("/intercom")
       }
     } catch (err) {
       console.error("Error creating chat:", err)

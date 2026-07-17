@@ -728,7 +728,7 @@ export default function CentroMotero() {
     }
 
     try {
-      const res = await fetch("/api/chat/conversations", {
+      const res = await fetch("/api/intercom/conversations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -739,7 +739,7 @@ export default function CentroMotero() {
       const data = await res.json()
       if (data.success) {
         // Send initial contextual message automatically to start conversation
-        await fetch("/api/chat/messages", {
+        await fetch("/api/intercom/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -748,8 +748,8 @@ export default function CentroMotero() {
           }),
         })
 
-        // Route directly to chat page with the conversation open
-        router.push(`/chats?conversationId=${data.conversation.id}`)
+        // Route directly to intercom page with the conversation open
+        router.push(`/intercom?conversationId=${data.conversation.id}`)
       } else {
         alert(data.error || "Error al iniciar conversación")
       }

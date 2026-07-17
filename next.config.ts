@@ -22,6 +22,16 @@ const nextConfig: NextConfig = {
         destination: "/api/garage/:path*",
         permanent: true,
       },
+      {
+        source: "/chats/:path*",
+        destination: "/intercom/:path*",
+        permanent: true,
+      },
+      {
+        source: "/api/chat/:path*",
+        destination: "/api/intercom/:path*",
+        permanent: true,
+      },
     ];
   },
 };

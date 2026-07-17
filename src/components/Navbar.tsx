@@ -88,8 +88,8 @@ export default function Navbar() {
             <span className="text-text-muted text-sm font-medium cursor-not-allowed opacity-50 flex items-center gap-1" title="Próximamente">
               <Compass className="w-4 h-4" /> Rodadas
             </span>
-            <Link href="/chats" className="text-text-muted hover:text-white transition-colors text-sm font-medium">
-              Chats
+            <Link href="/intercom" className="text-text-muted hover:text-white transition-colors text-sm font-medium">
+              Intercom
             </Link>
           </div>
 
