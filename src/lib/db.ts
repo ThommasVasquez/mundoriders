@@ -15,35 +15,40 @@ if (typeof globalThis.WebSocket === "undefined") {
   }
 }
 
-let prismaInstance: PrismaClient | null = null
+// Cache de instancias separadas: una real (con URL real) y una dummy (para build-time).
+let prismaRealInstance: PrismaClient | null = null
 
 export function getPrisma(): PrismaClient {
-  if (prismaInstance) {
-    return prismaInstance
-  }
-
   const databaseUrl = process.env.DATABASE_URL
-  if (!databaseUrl) {
-    // Phase of build or initial module loading when env vars are not bound yet
-    const placeholderUrl = "postgresql://placeholder_user:placeholder_password@localhost:5432/placeholder_db"
-    const pool = new Pool({ connectionString: placeholderUrl })
-    const adapter = new PrismaNeon(pool)
-    return new PrismaClient({ adapter })
+
+  // Si tenemos URL real, usar la instancia cacheada (o crearla)
+  if (databaseUrl && !databaseUrl.includes("placeholder")) {
+    if (!prismaRealInstance) {
+      const pool = new Pool({ connectionString: databaseUrl })
+      const adapter = new PrismaNeon(pool)
+      prismaRealInstance = new PrismaClient({ adapter })
+    }
+    return prismaRealInstance
   }
 
-  const pool = new Pool({ connectionString: databaseUrl })
+  // Sin URL real (build-time / module eval sin env vars):
+  // Creamos una instancia dummy nueva cada vez — nunca se usará para queries reales.
+  // Esto evita que el módulo crashee durante la compilación.
+  const placeholderUrl = "postgresql://placeholder:placeholder@localhost:5432/placeholder"
+  const pool = new Pool({ connectionString: placeholderUrl })
   const adapter = new PrismaNeon(pool)
-  prismaInstance = new PrismaClient({ adapter })
-  return prismaInstance
+  return new PrismaClient({ adapter })
 }
 
+// Proxy que resuelve el PrismaClient real en el momento de la llamada,
+// garantizando que siempre use la URL de entorno correcta en runtime.
 export const prisma = new Proxy({} as PrismaClient, {
-  get(target, prop, receiver) {
+  get(_target, prop) {
     const client = getPrisma()
-    const value = Reflect.get(client, prop)
+    const value = (client as any)[prop]
     if (typeof value === "function") {
       return value.bind(client)
     }
     return value
-  }
+  },
 })

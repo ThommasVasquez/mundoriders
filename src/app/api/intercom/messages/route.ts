@@ -4,19 +4,19 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 
 export async function GET(request: Request) {
-  const session = await auth()
-  if (!session || !session.user || !session.user.id) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
-  const { searchParams } = new URL(request.url)
-  const conversationId = searchParams.get("conversationId")
-
-  if (!conversationId) {
-    return NextResponse.json({ error: "conversationId requerido" }, { status: 400 })
-  }
-
   try {
+    const session = await auth()
+    if (!session || !session.user || !session.user.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const conversationId = searchParams.get("conversationId")
+
+    if (!conversationId) {
+      return NextResponse.json({ error: "conversationId requerido" }, { status: 400 })
+    }
+
     // 1. Verify user is a participant of this conversation
     const isParticipant = await prisma.conversationParticipant.findUnique({
       where: {
@@ -51,18 +51,18 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ success: true, messages })
   } catch (error) {
-    console.error("Error fetching messages:", error)
+    console.error("[Intercom GET messages error]:", error)
     return NextResponse.json({ error: "Error al obtener mensajes" }, { status: 500 })
   }
 }
 
 export async function POST(request: Request) {
-  const session = await auth()
-  if (!session || !session.user || !session.user.id) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
   try {
+    const session = await auth()
+    if (!session || !session.user || !session.user.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
     const { conversationId, contenido, mediaUrl } = await request.json()
 
     if (!conversationId || !contenido?.trim()) {
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, message })
   } catch (error) {
-    console.error("Error sending message:", error)
+    console.error("[Intercom POST message error]:", error)
     return NextResponse.json({ error: "Error al enviar mensaje" }, { status: 500 })
   }
 }

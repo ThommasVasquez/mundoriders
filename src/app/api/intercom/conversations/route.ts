@@ -4,12 +4,12 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 
 export async function GET() {
-  const session = await auth()
-  if (!session || !session.user || !session.user.id) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
   try {
+    const session = await auth()
+    if (!session || !session.user || !session.user.id) {
+      return NextResponse.json({ success: true, conversations: [] })
+    }
+
     // 1. Get all conversation IDs where the user is a participant
     const participantConvs = await prisma.conversationParticipant.findMany({
       where: { userId: session.user.id },
@@ -46,18 +46,18 @@ export async function GET() {
 
     return NextResponse.json({ success: true, conversations })
   } catch (error) {
-    console.error("Error fetching conversations:", error)
+    console.error("[Intercom GET conversations error]:", error)
     return NextResponse.json({ error: "Error al obtener conversaciones" }, { status: 500 })
   }
 }
 
 export async function POST(request: Request) {
-  const session = await auth()
-  if (!session || !session.user || !session.user.id) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
   try {
+    const session = await auth()
+    if (!session || !session.user || !session.user.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
     const { targetUserId } = await request.json()
 
     if (!targetUserId) {
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
     })
 
     if (existingConv) {
-      return NextResponse.json({ success: true, conversation: existingConv, message: "Conversación existente" })
+      return NextResponse.json({ success: true, conversation: existingConv, message: "Conversaci\u00f3n existente" })
     }
 
     // 2. Create a new conversation and link both participants
@@ -126,9 +126,9 @@ export async function POST(request: Request) {
       },
     })
 
-    return NextResponse.json({ success: true, conversation, message: "Conversación creada correctamente" })
+    return NextResponse.json({ success: true, conversation, message: "Conversaci\u00f3n creada correctamente" })
   } catch (error) {
-    console.error("Error creating conversation:", error)
-    return NextResponse.json({ error: "Error al crear la conversación" }, { status: 500 })
+    console.error("[Intercom POST conversation error]:", error)
+    return NextResponse.json({ error: "Error al crear la conversaci\u00f3n" }, { status: 500 })
   }
 }
