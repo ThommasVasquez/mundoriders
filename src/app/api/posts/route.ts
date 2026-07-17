@@ -11,9 +11,8 @@ const postSchema = z.object({
 })
 
 export async function GET() {
-  const session = await auth()
-  
   try {
+    const session = await auth()
     let posts: any[] = []
 
     if (session && session.user && session.user.id) {
@@ -139,12 +138,11 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await auth()
-  if (!session || !session.user || !session.user.id) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
   try {
+    const session = await auth()
+    if (!session || !session.user || !session.user.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
     const body = await req.json()
     const parsed = postSchema.safeParse(body)
 

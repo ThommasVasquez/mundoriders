@@ -228,13 +228,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.id as string
-        session.user.username = token.username as string
-        session.user.phone = token.phone as string
-        session.user.image = token.image as string
+        return {
+          ...session,
+          user: {
+            ...session.user,
+            id: token.id as string,
+            username: token.username as string,
+            phone: token.phone as string,
+            image: token.image as string,
+          }
+        }
       }
       return session
     },
+
   },
   pages: {
     signIn: "/login",
