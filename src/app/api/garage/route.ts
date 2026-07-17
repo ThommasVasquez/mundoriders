@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
@@ -12,6 +14,8 @@ const profileUpdateSchema = z.object({
     .optional(),
   bio: z.string().max(200, "La bio no puede superar los 200 caracteres").optional().nullable(),
   ciudad: z.string().max(100, "La ciudad no puede superar los 100 caracteres").optional().nullable(),
+  rutasFrecuentes: z.string().max(200, "La zona de rutas no puede superar los 200 caracteres").optional().nullable(),
+  rutaSonada: z.string().max(200, "La ruta soñada no puede superar los 200 caracteres").optional().nullable(),
   tipoRider: z.enum(["TOURING", "URBANO", "OFFROAD", "SPORT", "CUSTOM"]).optional(),
   fotoPerfil: z.string().max(500, "La foto de perfil no puede superar los 500 caracteres").optional().nullable(),
   fotoPortada: z.string().max(500, "La foto de portada no puede superar los 500 caracteres").optional().nullable(),
@@ -59,6 +63,11 @@ export async function GET(req: Request) {
             badge: true,
           },
         },
+        clubMemberships: {
+          include: {
+            club: true,
+          },
+        },
         statuses: {
           where: {
             expiresAt: {
@@ -76,18 +85,33 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
     }
 
-    // Calculate experience level dynamically based on achievements (badges) and time since creation
-    const badgesCount = userProfile.badges.length
-    const daysSinceCreation = Math.floor(
-      (new Date().getTime() - new Date(userProfile.createdAt).getTime()) / (1000 * 60 * 60 * 24)
-    )
+    // Calcular estadísticas en tiempo real
+    const ridesJoined = await prisma.rideParticipant.findMany({
+      where: { userId: userProfile.id, estado: "CONFIRMADO" },
+      include: { ride: { include: { route: true } } },
+    })
+    const kmRodadas = ridesJoined.reduce((sum, rp) => sum + (rp.ride.route?.distanciaKm || 0), 0)
+
+    const routesCreated = await prisma.route.findMany({
+      where: { creadorId: userProfile.id }
+    })
+    const kmRutasCreadas = routesCreated.reduce((sum, r) => sum + r.distanciaKm, 0)
+
+    const kmTotales = Math.round(kmRodadas + kmRutasCreadas)
+    const ridesOrganizedCount = await prisma.ride.count({ where: { organizadorId: userProfile.id } })
+    const ridesParticipatedCount = ridesJoined.length
+    const routesCreatedCount = routesCreated.length
+    const boxesCount = userProfile.motos.length
+
+    // Fórmula modular de nivel de experiencia
+    const expScore = (kmTotales * 0.5) + (ridesOrganizedCount * 15) + (ridesParticipatedCount * 10) + (boxesCount * 5)
 
     let calculatedLevel: "PRINCIPIANTE" | "INTERMEDIO" | "AVANZADO" | "EXPERTO" = "PRINCIPIANTE"
-    if (badgesCount >= 3 || daysSinceCreation >= 90) {
+    if (expScore >= 150) {
       calculatedLevel = "EXPERTO"
-    } else if (badgesCount >= 2 || daysSinceCreation >= 30) {
+    } else if (expScore >= 75) {
       calculatedLevel = "AVANZADO"
-    } else if (badgesCount >= 1 || daysSinceCreation >= 7) {
+    } else if (expScore >= 30) {
       calculatedLevel = "INTERMEDIO"
     }
 
@@ -99,7 +123,17 @@ export async function GET(req: Request) {
       userProfile.nivelExperiencia = calculatedLevel
     }
 
-    return NextResponse.json({ success: true, profile: userProfile })
+    return NextResponse.json({
+      success: true,
+      profile: userProfile,
+      stats: {
+        kmTotales,
+        ridesOrganizedCount,
+        ridesParticipatedCount,
+        routesCreatedCount,
+        boxesCount,
+      }
+    })
   } catch (error: any) {
     console.error("[Profile API GET Error]:", error)
     return NextResponse.json({ error: error.message || "Error al obtener el perfil" }, { status: 500 })
@@ -127,7 +161,7 @@ export async function PUT(req: Request) {
       )
     }
 
-    const { nombre, username, bio, ciudad, tipoRider, fotoPerfil, fotoPortada } = parsed.data
+    const { nombre, username, bio, ciudad, rutasFrecuentes, rutaSonada, tipoRider, fotoPerfil, fotoPortada } = parsed.data
 
     if (nombre !== undefined) {
       if (nombre === null || nombre.trim().length < 2) {
@@ -153,6 +187,8 @@ export async function PUT(req: Request) {
     if (username !== undefined) updateData.username = username
     if (bio !== undefined) updateData.bio = bio
     if (ciudad !== undefined) updateData.ciudad = ciudad
+    if (rutasFrecuentes !== undefined) updateData.rutasFrecuentes = rutasFrecuentes
+    if (rutaSonada !== undefined) updateData.rutaSonada = rutaSonada
     if (tipoRider !== undefined) updateData.tipoRider = tipoRider
     if (fotoPerfil !== undefined) updateData.fotoPerfil = fotoPerfil
     if (fotoPortada !== undefined) updateData.fotoPortada = fotoPortada
@@ -164,7 +200,7 @@ export async function PUT(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Perfil actualizado correctamente",
+      message: "Garage actualizado correctamente",
       user: updatedUser,
     })
   } catch (error: any) {

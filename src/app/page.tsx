@@ -91,10 +91,10 @@ export default function LandingPage() {
           <div>
             {session ? (
               <LinkNext
-                href="/feed"
+                href="/autopista"
                 className="py-2 px-5 bg-primary-orange hover:bg-primary-orange-hover text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-primary-orange/10 hover:shadow-primary-orange/20 cursor-pointer"
               >
-                Ir al Feed
+                Autopista
               </LinkNext>
             ) : (
               <LinkNext
@@ -128,10 +128,10 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
             {session ? (
               <LinkNext
-                href="/feed"
+                href="/autopista"
                 className="py-4 px-10 bg-primary-orange hover:bg-primary-orange-hover text-white font-extrabold rounded-xl transition-all shadow-lg shadow-primary-orange/20 hover:shadow-primary-orange/45 flex items-center gap-2 cursor-pointer text-sm uppercase tracking-wider"
               >
-                <span>Acceder a la Comunidad</span>
+                <span>Acceder a la Autopista</span>
                 <ChevronRight className="w-5 h-5" />
               </LinkNext>
             ) : (
@@ -166,7 +166,7 @@ export default function LandingPage() {
             </div>
             <h3 className="font-extrabold text-xl text-white tracking-wide uppercase">Comunidad Real</h3>
             <p className="text-text-muted text-sm leading-relaxed">
-              Descubre moteros de tu zona, únete a clubes organizados y comparte fotos de tus viajes y de tu consentimiento de garaje en el feed cronológico.
+              Descubre moteros de tu zona, únete a clubes organizados y comparte fotos de tus viajes y de tu garaje en la autopista social.
             </p>
           </div>
 

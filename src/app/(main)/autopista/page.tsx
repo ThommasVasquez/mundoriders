@@ -286,7 +286,7 @@ export default function FeedPage() {
     if (followingLoading[pilotId]) return
     setFollowingLoading((prev) => ({ ...prev, [pilotId]: true }))
     try {
-      const res = await fetch("/api/profile/follow", {
+      const res = await fetch("/api/garage/follow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ targetUserId: pilotId }),
@@ -362,7 +362,7 @@ export default function FeedPage() {
 
   const fetchProfileStats = async () => {
     try {
-      const res = await fetch("/api/profile")
+      const res = await fetch("/api/garage")
       const data = await res.json()
       if (res.ok && data.profile) {
         setProfileStats(data.profile)
@@ -383,7 +383,7 @@ export default function FeedPage() {
 
   const fetchStories = async () => {
     try {
-      const res = await fetch("/api/profile/stories")
+      const res = await fetch("/api/garage/stories")
       const data = await res.json()
       if (data.success) {
         setStories(data.stories)
@@ -395,7 +395,7 @@ export default function FeedPage() {
 
   const fetchDiscoverUsers = async () => {
     try {
-      const res = await fetch("/api/profile/discover")
+      const res = await fetch("/api/garage/discover")
       const data = await res.json()
       if (data.success) {
         setDiscoverUsers(data.users)
@@ -588,7 +588,7 @@ export default function FeedPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
 
-      const resStatus = await fetch("/api/profile/status", {
+      const resStatus = await fetch("/api/garage/status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -722,7 +722,7 @@ export default function FeedPage() {
               
               {/* Profile Details Container */}
               <div className="px-5 pb-5 relative -mt-8 flex flex-col items-center text-center">
-                <Link href={`/perfil/${profileStats?.username || session.user.username || session.user.id}`} className="group">
+                <Link href={`/garage/${profileStats?.username || session.user.username || session.user.id}`} className="group">
                   {profileStats?.fotoPerfil ? (
                     <img
                       src={profileStats.fotoPerfil}
@@ -764,7 +764,7 @@ export default function FeedPage() {
                 <div className="flex justify-around w-full">
                   <div className="text-center">
                     <span className="block text-[10px] uppercase font-bold text-text-muted">Mi Garaje</span>
-                    <Link href={`/perfil/${profileStats?.username || session.user.username || session.user.id}`} className="text-lg font-black text-white hover:text-primary-orange transition-colors flex items-center gap-1.5 justify-center mt-1">
+                    <Link href={`/garage/${profileStats?.username || session.user.username || session.user.id}`} className="text-lg font-black text-white hover:text-primary-orange transition-colors flex items-center gap-1.5 justify-center mt-1">
                       <Wrench className="w-4 h-4 text-primary-orange" /> {motosCount}
                     </Link>
                   </div>
@@ -1304,7 +1304,7 @@ export default function FeedPage() {
                         onMouseLeave={() => { setHoveredPostUserId(null); setHoveredPostId(null); }}
                       >
                         <Link 
-                          href={`/perfil/${post.user.username}`}
+                          href={`/garage/${post.user.username}`}
                           className="flex items-center space-x-3 group cursor-pointer"
                         >
                           {post.user.fotoPerfil ? (
@@ -2118,7 +2118,7 @@ export default function FeedPage() {
                       </div>
                     )}
 
-                    <Link href={`/perfil/${pilot.username}`} className="flex items-center gap-2.5 group cursor-pointer">
+                    <Link href={`/garage/${pilot.username}`} className="flex items-center gap-2.5 group cursor-pointer">
                       <div className="w-8 h-8 rounded-full overflow-hidden bg-primary-orange/15 border border-primary-orange/20">
                         {pilot.fotoPerfil ? (
                           <img src={pilot.fotoPerfil} alt="" className="w-full h-full object-cover" />
@@ -2139,7 +2139,7 @@ export default function FeedPage() {
                     </Link>
 
                     <Link
-                      href={`/perfil/${pilot.username}`}
+                      href={`/garage/${pilot.username}`}
                       className="px-2 py-1 bg-primary-orange hover:bg-primary-orange-hover text-white text-[9px] font-extrabold rounded-md uppercase tracking-wider transition-colors cursor-pointer"
                     >
                       Ver
@@ -2234,7 +2234,7 @@ export default function FeedPage() {
             </div>
             
             <Link 
-              href={`/perfil/${session?.user?.username || 'user'}`}
+              href={`/garage/${session?.user?.username || 'user'}`}
               className="block text-center text-[10px] font-bold text-primary-orange hover:underline cursor-pointer"
             >
               Configurar contactos en Perfil →

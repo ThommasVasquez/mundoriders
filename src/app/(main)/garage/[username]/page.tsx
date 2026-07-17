@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 "use client"
 
 
@@ -8,7 +10,7 @@ import { useNotification } from "@/components/NotificationProvider"
 import { 
   User, MapPin, Award, ShieldAlert, Plus, Trash2, Edit2, Check, X,
   Wrench, Calendar, Tag, Compass, Sparkles, Loader2, Image, CheckCircle2, Navigation,
-  Camera, Upload, Flame, UserPlus, UserCheck
+  Camera, Upload, Flame, UserPlus, UserCheck, Users
 } from "lucide-react"
 import gsap from "gsap"
 
@@ -21,6 +23,10 @@ type Moto = {
   anio: number
   apodo: string | null
   fotoUrl: string | null
+  galeria: string[]
+  mods: string[]
+  kilometraje: number
+  estado: "actual" | "anterior"
 }
 
 type UserProfile = {
@@ -31,11 +37,15 @@ type UserProfile = {
   fotoPortada: string | null
   bio: string | null
   ciudad: string | null
+  rutasFrecuentes: string | null
+  rutaSonada: string | null
   nivelExperiencia: "PRINCIPIANTE" | "INTERMEDIO" | "AVANZADO" | "EXPERTO"
   tipoRider: "TOURING" | "URBANO" | "OFFROAD" | "SPORT" | "CUSTOM"
   motos: Moto[]
   emergencyContacts: any[]
   statuses?: any[]
+  clubMemberships?: any[]
+  badges?: any[]
 }
 
 // VerifiedBadge helper
@@ -67,6 +77,9 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const [usernameInput, setUsernameInput] = useState("")
   const [bio, setBio] = useState("")
   const [ciudad, setCiudad] = useState("")
+  const [rutasFrecuentes, setRutasFrecuentes] = useState("")
+  const [rutaSonada, setRutaSonada] = useState("")
+  const [stats, setStats] = useState<{ kmTotales: number; ridesOrganizedCount: number; ridesParticipatedCount: number; routesCreatedCount: number; boxesCount: number } | null>(null)
   const [nivelExperiencia, setNivelExperiencia] = useState<UserProfile["nivelExperiencia"]>("PRINCIPIANTE")
   const [tipoRider, setTipoRider] = useState<UserProfile["tipoRider"]>("URBANO")
   const [fotoPerfil, setFotoPerfil] = useState("")
@@ -87,6 +100,11 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const [motoAnio, setMotoAnio] = useState(new Date().getFullYear())
   const [motoApodo, setMotoApodo] = useState("")
   const [motoFoto, setMotoFoto] = useState("")
+  const [motoGaleria, setMotoGaleria] = useState<string[]>([])
+  const [motoMods, setMotoMods] = useState<string[]>([])
+  const [motoKilometraje, setMotoKilometraje] = useState(0)
+  const [motoEstado, setMotoEstado] = useState<"actual" | "anterior">("actual")
+  const [newMod, setNewMod] = useState("")
   
   // GSAP Refs
   const profileCardRef = useRef<HTMLDivElement>(null)
@@ -204,7 +222,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const handleSavePosition = async () => {
     try {
       const finalUrl = `${coverUrl}?pos=${tempYPos}`
-      const res = await fetch("/api/profile", {
+      const res = await fetch("/api/garage", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -230,17 +248,20 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     try {
       setLoading(true)
       setError("")
-      const res = await fetch(`/api/profile?username=${encodeURIComponent(username)}`)
+      const res = await fetch(`/api/garage?username=${encodeURIComponent(username)}`)
       const data = await res.json()
       
       if (!res.ok) throw new Error(data.error || "Error al obtener el perfil")
       
       setProfile(data.profile)
+      setStats(data.stats || null)
       
       setNombre(data.profile.nombre || "")
       setUsernameInput(data.profile.username || "")
       setBio(data.profile.bio || "")
       setCiudad(data.profile.ciudad || "")
+      setRutasFrecuentes(data.profile.rutasFrecuentes || "")
+      setRutaSonada(data.profile.rutaSonada || "")
       setNivelExperiencia(data.profile.nivelExperiencia || "PRINCIPIANTE")
       setTipoRider(data.profile.tipoRider || "URBANO")
       setFotoPerfil(data.profile.fotoPerfil || "")
@@ -254,7 +275,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
 
   const fetchFollowStatus = async () => {
     try {
-      const res = await fetch(`/api/profile/follow?username=${encodeURIComponent(username)}`)
+      const res = await fetch(`/api/garage/follow?username=${encodeURIComponent(username)}`)
       const data = await res.json()
       if (data.success) {
         setIsFollowing(data.following)
@@ -268,7 +289,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
 
   const handleToggleFollow = async () => {
     try {
-      const res = await fetch("/api/profile/follow", {
+      const res = await fetch("/api/garage/follow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username }),
@@ -342,7 +363,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const res = await fetch("/api/profile", {
+      const res = await fetch("/api/garage", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -350,6 +371,8 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           username: usernameInput,
           bio: bio || null,
           ciudad: ciudad || null,
+          rutasFrecuentes: rutasFrecuentes || null,
+          rutaSonada: rutaSonada || null,
           tipoRider,
           fotoPerfil: fotoPerfil || null,
           fotoPortada: fotoPortada || null,
@@ -368,21 +391,26 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
       }
 
       if (profile && usernameInput !== profile.username) {
-        window.location.href = `/perfil/${usernameInput}`
+        window.location.href = `/garage/${usernameInput}`
         return
       }
 
       setIsEditing(false)
       fetchProfile()
     } catch (err: any) {
-      showAlert(err.message, "Error al guardar perfil", "error")
+      showAlert(err.message, "Error al guardar garage", "error")
     }
   }
 
   const handleAddMoto = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const res = await fetch("/api/profile/motos", {
+      // Split mods by comma
+      const parsedMods = newMod
+        ? newMod.split(",").map((m) => m.trim()).filter(Boolean)
+        : []
+
+      const res = await fetch("/api/garage/boxes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -392,6 +420,10 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           anio: Number(motoAnio),
           apodo: motoApodo || null,
           fotoUrl: motoFoto || null,
+          galeria: motoGaleria,
+          mods: parsedMods,
+          kilometraje: Number(motoKilometraje),
+          estado: motoEstado,
         }),
       })
 
@@ -405,10 +437,15 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
       setMotoAnio(new Date().getFullYear())
       setMotoApodo("")
       setMotoFoto("")
+      setMotoGaleria([])
+      setMotoMods([])
+      setMotoKilometraje(0)
+      setMotoEstado("actual")
+      setNewMod("")
       
       fetchProfile()
     } catch (err: any) {
-      showAlert(err.message, "Error al agregar moto", "error")
+      showAlert(err.message, "Error al agregar box", "error")
     }
   }
 
@@ -416,7 +453,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     if (!confirm("¿Seguro que deseas eliminar esta moto?")) return
     
     try {
-      const res = await fetch(`/api/profile/motos/${motoId}`, {
+      const res = await fetch(`/api/garage/boxes/${motoId}`, {
         method: "DELETE",
       })
 
@@ -426,6 +463,33 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
       fetchProfile()
     } catch (err: any) {
       toast.error(err.message)
+    }
+  }
+
+  const uploadMultipleFiles = async (e: React.ChangeEvent<HTMLInputElement>, target: "moto") => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const formData = new FormData()
+        formData.append("file", file)
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || "Error al subir imagen")
+        return data.url
+      })
+
+      const urls = await Promise.all(uploadPromises)
+      setMotoGaleria((prev) => [...prev, ...urls])
+      if (!motoFoto && urls.length > 0) {
+        setMotoFoto(urls[0])
+      }
+    } catch (err: any) {
+      toast.error("Error al cargar fotos de la galería: " + err.message)
     }
   }
 
@@ -446,7 +510,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
 
       if (target === "profile") {
         setFotoPerfil(data.url)
-        await fetch("/api/profile", {
+        await fetch("/api/garage", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -461,7 +525,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         fetchProfile()
       } else if (target === "portada") {
         setFotoPortada(data.url)
-        await fetch("/api/profile", {
+        await fetch("/api/garage", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -470,7 +534,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         })
         fetchProfile()
       } else if (target === "status") {
-        const resStatus = await fetch("/api/profile/status", {
+        const resStatus = await fetch("/api/garage/status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -486,6 +550,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         fetchProfile()
       } else {
         setMotoFoto(data.url)
+        setMotoGaleria((prev) => [...prev, data.url])
       }
     } catch (err: any) {
       toast.error("Error al subir archivo: " + err.message)
@@ -495,7 +560,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const handleSelectExistingPhoto = async (url: string) => {
     try {
       setFotoPerfil(url)
-      await fetch("/api/profile", {
+      await fetch("/api/garage", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -728,7 +793,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                       onClick={() => setIsEditing(true)}
                       className="py-2 px-4 border border-white/10 hover:bg-white/5 text-xs text-white rounded-lg flex items-center gap-2 cursor-pointer w-fit mx-auto sm:mx-0 transition-colors"
                     >
-                      <Edit2 className="w-3.5 h-3.5" /> Editar Perfil
+                      <Edit2 className="w-3.5 h-3.5" /> Editar Garage
                     </button>
                   )}
                   {!isOwnProfile && session && (
@@ -776,16 +841,32 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                   </span>
                 )}
               </div>
-
               <p className="text-text-muted text-sm italic max-w-lg leading-relaxed text-center sm:text-left">
                 {bio || "Este motociclista aún no ha escrito su biografía."}
               </p>
+
+              {profile && (
+                <div className="flex flex-col gap-2 pt-2 border-t border-white/5 w-full">
+                  {profile.rutasFrecuentes && (
+                    <div className="flex items-center gap-1.5 text-xs text-text-muted justify-center sm:justify-start">
+                      <Compass className="w-3.5 h-3.5 text-primary-orange" />
+                      <span>Zonas habituales: <strong className="text-white font-semibold">{profile.rutasFrecuentes}</strong></span>
+                    </div>
+                  )}
+                  {profile.rutaSonada && (
+                    <div className="flex items-center gap-1.5 text-xs text-text-muted justify-center sm:justify-start">
+                      <Navigation className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Ruta soñada / Próximo destino: <strong className="text-emerald-300 italic font-semibold">{profile.rutaSonada}</strong></span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
           {/* EDIT FORM MODAL INLINE */}
           {isEditing && (
             <form onSubmit={handleUpdateProfile} className="mt-8 pt-8 border-t border-white/5 space-y-4">
-              <h3 className="text-lg font-bold text-white mb-4">Editar Perfil</h3>
+              <h3 className="text-lg font-bold text-white mb-4">Editar Garage</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -849,7 +930,29 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                     className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none"
                     placeholder="Cuéntanos un poco sobre ti y tu moto..."
                   />
-                 </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-text-muted mb-1.5">Zonas/Rutas donde más ruedas</label>
+                  <input
+                    type="text"
+                    value={rutasFrecuentes}
+                    onChange={(e) => setRutasFrecuentes(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none"
+                    placeholder="Ej: La Línea, Vía al Llano, Guatavita"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-text-muted mb-1.5">Ruta Soñada / Próximo Destino</label>
+                  <input
+                    type="text"
+                    value={rutaSonada}
+                    onChange={(e) => setRutaSonada(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none"
+                    placeholder="Ej: Cabo de la Vela, Ushuaia"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
@@ -872,6 +975,76 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           </div>
         </section>
 
+        {/* Estadísticas del Rider */}
+        {stats && (
+          <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="glass-panel p-5 rounded-2xl text-center space-y-1">
+              <span className="block text-[10px] text-text-muted uppercase font-black tracking-wider">Km Recorridos</span>
+              <span className="text-2xl font-black text-white">{(stats.kmTotales || 0).toLocaleString()} km</span>
+            </div>
+            <div className="glass-panel p-5 rounded-2xl text-center space-y-1">
+              <span className="block text-[10px] text-text-muted uppercase font-black tracking-wider">Rodadas Asistidas</span>
+              <span className="text-2xl font-black text-white">{stats.ridesParticipatedCount || 0}</span>
+            </div>
+            <div className="glass-panel p-5 rounded-2xl text-center space-y-1">
+              <span className="block text-[10px] text-text-muted uppercase font-black tracking-wider">Rodadas Organizadas</span>
+              <span className="text-2xl font-black text-white">{stats.ridesOrganizedCount || 0}</span>
+            </div>
+            <div className="glass-panel p-5 rounded-2xl text-center space-y-1">
+              <span className="block text-[10px] text-text-muted uppercase font-black tracking-wider">Rutas Creadas</span>
+              <span className="text-2xl font-black text-white">{stats.routesCreatedCount || 0}</span>
+            </div>
+          </section>
+        )}
+
+        {/* Medallas y Logros (Badges) */}
+        {profile && profile.badges && profile.badges.length > 0 && (
+          <section className="glass-panel p-6 rounded-2xl space-y-4">
+            <h3 className="text-lg font-black text-white uppercase flex items-center gap-2">
+              <Award className="w-5 h-5 text-primary-orange" /> Medallas y Logros
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {profile.badges.map((ub: any) => (
+                <div key={ub.id} className="bg-black/40 border border-white/5 p-4 rounded-xl flex flex-col items-center text-center space-y-2 group hover:border-primary-orange/30 transition-all duration-200">
+                  <div className="w-12 h-12 rounded-full bg-primary-orange/10 border border-primary-orange/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                    {ub.badge.iconoUrl || "🏅"}
+                  </div>
+                  <div className="space-y-0.5">
+                    <span className="block text-xs font-black text-white uppercase">{ub.badge.nombre}</span>
+                    <span className="block text-[10px] text-text-muted leading-tight">{ub.badge.descripcion}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Clubes a los que pertenece */}
+        {profile && profile.clubMemberships && profile.clubMemberships.length > 0 && (
+          <section className="glass-panel p-6 rounded-2xl space-y-4">
+            <h3 className="text-lg font-black text-white uppercase flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary-orange" /> Mis Clubes
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {profile.clubMemberships.map((membership: any) => (
+                <div key={membership.club.id} className="bg-black/40 border border-white/5 p-4 rounded-xl flex items-center gap-3 hover:border-primary-orange/30 transition-colors">
+                  <div className="w-10 h-10 rounded-lg bg-neutral-800 border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {membership.club.logoUrl ? (
+                      <img src={membership.club.logoUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <Users className="w-5 h-5 text-text-muted" />
+                    )}
+                  </div>
+                  <div>
+                    <span className="block text-xs font-black text-white uppercase leading-snug">{membership.club.nombre}</span>
+                    <span className="block text-[10px] text-text-muted">{membership.club.ciudad} • {membership.rol}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+ 
         {/* Motos Section */}
         <section ref={garajeSectionRef} className="space-y-6">
           <div className="flex items-center justify-between">
@@ -883,15 +1056,15 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                 onClick={() => setShowAddMoto(true)}
                 className="py-1.5 px-3.5 bg-primary-orange/10 hover:bg-primary-orange/20 border border-primary-orange/30 text-xs text-primary-orange font-bold rounded-lg flex items-center gap-1.5 cursor-pointer transition-all"
               >
-                <Plus className="w-4 h-4" /> Registrar Moto
+                <Plus className="w-4 h-4" /> Registrar Box
               </button>
             )}
           </div>
 
-          {/* Add Moto Form */}
+          {/* Add Moto (Box) Form */}
           {showAddMoto && (
             <form onSubmit={handleAddMoto} className="glass-panel p-6 rounded-2xl space-y-4">
-              <h3 className="text-base font-bold text-white">Agregar Nueva Moto</h3>
+              <h3 className="text-base font-bold text-white">Agregar Nuevo Box (Moto)</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase text-text-muted mb-1.5">Marca</label>
@@ -901,7 +1074,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                     placeholder="Yamaha, Honda, BMW..."
                     value={motoMarca}
                     onChange={(e) => setMotoMarca(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none"
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
                   />
                 </div>
                 <div>
@@ -912,7 +1085,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                     placeholder="MT-09, XRE 300, R 1250 GS..."
                     value={motoModelo}
                     onChange={(e) => setMotoModelo(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none"
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
                   />
                 </div>
                 <div>
@@ -924,7 +1097,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                     max={2500}
                     value={motoCilindraje}
                     onChange={(e) => setMotoCilindraje(Number(e.target.value))}
-                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none"
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
                   />
                 </div>
                 <div>
@@ -933,33 +1106,33 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                     type="number"
                     required
                     min={1950}
-                    max={new Date().getFullYear() + 1}
+                    max={new Date().getFullYear() + 2}
                     value={motoAnio}
                     onChange={(e) => setMotoAnio(Number(e.target.value))}
-                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none"
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-text-muted mb-1.5">Apodo (Opcional)</label>
+                  <label className="block text-xs font-semibold uppercase text-text-muted mb-1.5">Apodo del Box (Opcional)</label>
                   <input
                     type="text"
                     placeholder="Ej: La consentida"
                     value={motoApodo}
                     onChange={(e) => setMotoApodo(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none"
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase text-text-muted mb-1.5">Foto de la Moto</label>
+                  <label className="block text-xs font-semibold uppercase text-text-muted mb-1.5">Foto Principal</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
                       value={motoFoto}
                       onChange={(e) => setMotoFoto(e.target.value)}
-                      className="flex-grow bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none"
+                      className="flex-grow bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
                       placeholder="URL de foto o sube"
                     />
-                    <label className="py-2.5 px-3 bg-white/5 hover:bg-white/10 text-xs rounded-lg cursor-pointer">
+                    <label className="py-2.5 px-3 bg-white/5 hover:bg-white/10 text-xs rounded-lg cursor-pointer text-white">
                       Sube
                       <input
                         type="file"
@@ -968,6 +1141,75 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                         className="hidden"
                       />
                     </label>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-text-muted mb-1.5">Kilometraje (km)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={motoKilometraje}
+                    onChange={(e) => setMotoKilometraje(Number(e.target.value))}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-text-muted mb-1.5">Estado del Box</label>
+                  <select
+                    value={motoEstado}
+                    onChange={(e: any) => setMotoEstado(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
+                  >
+                    <option value="actual">Actual (En mi posesión)</option>
+                    <option value="anterior">Anterior (Historial)</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <label className="block text-xs font-semibold uppercase text-text-muted mb-1.5">Mods / Accesorios (Separados por comas)</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Exhosto Akrapovic, Luces LED, Cúpula touring"
+                    value={newMod}
+                    onChange={(e) => setNewMod(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
+                  />
+                </div>
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <label className="block text-xs font-semibold uppercase text-text-muted mb-1.5">Galería de Fotos (Carga Múltiple)</label>
+                  <div className="flex flex-col gap-3">
+                    <label className="w-full py-4 border border-dashed border-white/20 hover:border-primary-orange/50 bg-white/5 hover:bg-white/10 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer transition-all">
+                      <Upload className="w-6 h-6 text-text-muted" />
+                      <span className="text-xs font-bold text-white">Subir imágenes para la galería</span>
+                      <span className="text-[10px] text-text-muted">Puedes seleccionar varias fotos a la vez</span>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={(e) => uploadMultipleFiles(e, "moto")}
+                        className="hidden"
+                      />
+                    </label>
+                    {motoGaleria.length > 0 && (
+                      <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 pt-2">
+                        {motoGaleria.map((url, idx) => (
+                          <div key={idx} className="relative aspect-video rounded-lg overflow-hidden group border border-white/5">
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMotoGaleria((prev) => prev.filter((_, i) => i !== idx))
+                                if (motoFoto === url) {
+                                  setMotoFoto(motoGaleria[idx === 0 ? 1 : 0] || "")
+                                }
+                              }}
+                              className="absolute top-1 right-1 p-1 bg-red-950/80 hover:bg-red-600 rounded text-red-200 hover:text-white text-[9px]"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -984,7 +1226,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                   type="submit"
                   className="py-2 px-4 bg-primary-orange hover:bg-primary-orange-hover text-xs font-bold rounded-lg text-white cursor-pointer"
                 >
-                  Agregar Moto
+                  Agregar Box
                 </button>
               </div>
             </form>
@@ -1018,42 +1260,84 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                     {isOwnProfile && (
                       <button
                         onClick={() => handleDeleteMoto(moto.id)}
-                        className="absolute top-3 right-3 p-2 bg-red-950/80 hover:bg-red-600 border border-red-500/20 hover:border-red-500 rounded-lg text-red-200 hover:text-white transition-colors cursor-pointer"
+                        className="absolute top-3 right-3 p-2 bg-red-950/80 hover:bg-red-600 border border-red-500/20 hover:border-red-500 rounded-lg text-red-200 hover:text-white transition-colors cursor-pointer z-10"
                         title="Eliminar Moto"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     )}
 
-                    {moto.apodo && (
-                      <span className="absolute bottom-3 left-4 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary-orange text-white shadow-lg">
-                        <Sparkles className="w-3.5 h-3.5 fill-current animate-pulse" /> {moto.apodo}
+                    <div className="absolute bottom-3 left-4 flex flex-wrap gap-1.5 items-center">
+                      {moto.apodo && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary-orange text-white shadow-lg">
+                          <Sparkles className="w-3.5 h-3.5 fill-current animate-pulse" /> {moto.apodo}
+                        </span>
+                      )}
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-lg ${
+                        moto.estado === "anterior" 
+                          ? "bg-neutral-700 text-neutral-300" 
+                          : "bg-emerald-600 text-white"
+                      }`}>
+                        {moto.estado === "anterior" ? "Anterior" : "Actual"}
                       </span>
-                    )}
+                    </div>
                   </div>
 
-                  <div className="p-5 flex-grow space-y-3">
+                  <div className="p-5 flex-grow space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-black text-white tracking-wide uppercase">
+                      <h3 className="text-lg font-black text-white tracking-wide uppercase font-extrabold">
                         {moto.marca} {moto.modelo}
                       </h3>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 pt-2">
-                      <div className="bg-black/35 border border-white/5 p-2.5 rounded-xl text-center">
-                        <span className="block text-[10px] text-text-muted uppercase font-bold tracking-wider">Cilindraje</span>
-                        <span className="text-sm font-black text-white mt-0.5 block">{moto.cilindraje} cc</span>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-black/35 border border-white/5 p-2 rounded-xl text-center">
+                        <span className="block text-[9px] text-text-muted uppercase font-bold tracking-wider">Cilindraje</span>
+                        <span className="text-xs font-black text-white mt-0.5 block">{moto.cilindraje} cc</span>
                       </div>
-                      <div className="bg-black/35 border border-white/5 p-2.5 rounded-xl text-center">
-                        <span className="block text-[10px] text-text-muted uppercase font-bold tracking-wider">Año Modelo</span>
-                        <span className="text-sm font-black text-white mt-0.5 block">{moto.anio}</span>
+                      <div className="bg-black/35 border border-white/5 p-2 rounded-xl text-center">
+                        <span className="block text-[9px] text-text-muted uppercase font-bold tracking-wider">Año</span>
+                        <span className="text-xs font-black text-white mt-0.5 block">{moto.anio}</span>
+                      </div>
+                      <div className="bg-black/35 border border-white/5 p-2 rounded-xl text-center">
+                        <span className="block text-[9px] text-text-muted uppercase font-bold tracking-wider">Kilometraje</span>
+                        <span className="text-xs font-black text-white mt-0.5 block">{moto.kilometraje?.toLocaleString() || 0} km</span>
                       </div>
                     </div>
+
+                    {/* Mods */}
+                    {moto.mods && moto.mods.length > 0 && (
+                      <div className="space-y-1.5">
+                        <span className="block text-[10px] text-text-muted uppercase font-bold tracking-wider">Mods e Instalaciones:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {moto.mods.map((mod, mIdx) => (
+                            <span key={mIdx} className="text-[10px] px-2 py-0.5 bg-white/5 border border-white/5 rounded-md text-white">
+                              🔧 {mod}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Galería */}
+                    {moto.galeria && moto.galeria.length > 0 && (
+                      <div className="space-y-1.5">
+                        <span className="block text-[10px] text-text-muted uppercase font-bold tracking-wider">Galería del Box:</span>
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {moto.galeria.map((url, gIdx) => (
+                            <div key={gIdx} className="aspect-video rounded-lg overflow-hidden border border-white/5 cursor-zoom-in" onClick={() => window.open(url, '_blank')}>
+                              <img src={url} alt="" className="w-full h-full object-cover hover:scale-110 transition-transform duration-250" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           )}
+
         </section>
 
       </main>

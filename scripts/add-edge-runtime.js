@@ -20,15 +20,15 @@ const files = [
   'src/app/api/posts/[postId]/edit/route.ts',
   'src/app/api/posts/[postId]/like/route.ts',
   'src/app/api/posts/route.ts',
-  'src/app/api/profile/discover/route.ts',
-  'src/app/api/profile/follow/route.ts',
-  'src/app/api/profile/motos/[id]/route.ts',
-  'src/app/api/profile/motos/route.ts',
-  'src/app/api/profile/status/route.ts',
-  'src/app/api/profile/stories/route.ts',
-  'src/app/api/profile/route.ts',
+  'src/app/api/garage/discover/route.ts',
+  'src/app/api/garage/follow/route.ts',
+  'src/app/api/garage/boxes/[id]/route.ts',
+  'src/app/api/garage/boxes/route.ts',
+  'src/app/api/garage/status/route.ts',
+  'src/app/api/garage/stories/route.ts',
+  'src/app/api/garage/route.ts',
   'src/app/api/upload/route.ts',
-  'src/app/(main)/perfil/[username]/page.tsx'
+  'src/app/(main)/garage/[username]/page.tsx'
 ];
 
 files.forEach(file => {

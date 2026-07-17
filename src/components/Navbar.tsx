@@ -44,7 +44,7 @@ export default function Navbar() {
   const checkStatus = async () => {
     if (!session?.user) return
     try {
-      const res = await fetch("/api/profile/status")
+      const res = await fetch("/api/garage/status")
       if (!res.ok) return
       const data = await res.json()
       setHasActiveStatus(!!data?.activeStatus)
@@ -69,7 +69,7 @@ export default function Navbar() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/feed" className="flex items-center space-x-2 text-primary-orange">
+            <Link href="/autopista" className="flex items-center space-x-2 text-primary-orange">
               <Flame className="w-8 h-8 fill-current" />
               <span className="text-xl font-extrabold tracking-wider font-mono">RIDER</span>
             </Link>
@@ -77,8 +77,8 @@ export default function Navbar() {
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link href="/feed" className="text-text-muted hover:text-white transition-colors text-sm font-medium">
-              Feed Social
+            <Link href="/autopista" className="text-text-muted hover:text-white transition-colors text-sm font-medium">
+              Autopista
             </Link>
             <span className="text-white/10 text-sm">|</span>
             <Link href="/centro-motero" className="text-text-muted hover:text-white transition-colors text-sm font-medium">
@@ -98,14 +98,14 @@ export default function Navbar() {
             {session && session.user ? (
               <div className="flex items-center space-x-4">
                 <Link
-                  href={`/perfil/${session.user.username || session.user.id}`}
+                  href={`/garage/${session.user.username || session.user.id}`}
                   className="flex items-center space-x-2.5 p-1 px-3 rounded-full border border-white/5 bg-white/5 hover:bg-white/10 transition-colors"
                 >
                   {session.user.image ? (
                     <div className={hasActiveStatus ? "ring-fire-sm" : ""}>
                       <img
                         src={session.user.image}
-                        alt={session.user.name || "Perfil"}
+                        alt={session.user.name || "Garage"}
                         className="w-7 h-7 rounded-full object-cover"
                       />
                     </div>
@@ -185,14 +185,14 @@ export default function Navbar() {
                         <span>Publicaciones Guardadas</span>
                       </button>
 
-                      {/* Mi Garaje (Moto) */}
+                      {/* Mi Garage */}
                       <Link
-                        href={`/perfil/${session.user.username || session.user.id}`}
+                        href={`/garage/${session.user.username || session.user.id}`}
                         onClick={() => setShowMenu(false)}
                         className="w-full text-left px-3 py-2 text-xs font-semibold hover:bg-white/5 rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer"
                       >
                         <Wrench className="w-4 h-4 text-primary-orange" />
-                        <span>Mi Garaje (Motos)</span>
+                        <span>Mi Garage</span>
                       </Link>
 
                       {/* Ajustes de Intercom */}

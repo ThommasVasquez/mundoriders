@@ -86,7 +86,7 @@ export default function LoginPage() {
       if (res?.error) {
         setErrorMsg("Código OTP incorrecto o expirado")
       } else {
-        router.push("/feed")
+        router.push("/autopista")
         router.refresh()
       }
     } catch (err) {
@@ -111,7 +111,7 @@ export default function LoginPage() {
       if (res?.error) {
         setErrorMsg("Credenciales incorrectas")
       } else {
-        router.push("/feed")
+        router.push("/autopista")
         router.refresh()
       }
     } catch (err) {
@@ -122,7 +122,7 @@ export default function LoginPage() {
   }
 
   const handleGoogleLogin = () => {
-    signIn("google", { callbackUrl: "/feed" })
+    signIn("google", { callbackUrl: "/autopista" })
   }
 
   return (

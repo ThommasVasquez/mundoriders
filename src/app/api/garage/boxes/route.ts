@@ -1,3 +1,4 @@
+export const runtime = "edge";
 
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
@@ -6,38 +7,42 @@ import { z } from "zod"
 
 const motoSchema = z.object({
   marca: z.string().min(2, "La marca es requerida"),
-  modelo: z.string().min(2, "El modelo es requerido"),
+  modelo: z.string().min(1, "El modelo es requerido"),
   cilindraje: z.number().int().positive("El cilindraje debe ser positivo"),
-  anio: z.number().int().min(1900).max(new Date().getFullYear() + 1),
+  anio: z.number().int().min(1900).max(new Date().getFullYear() + 2),
   apodo: z.string().optional().nullable(),
   fotoUrl: z.string().max(500, "La foto no puede superar los 500 caracteres").optional().nullable(),
+  galeria: z.array(z.string()).optional(),
+  mods: z.array(z.string()).optional(),
+  kilometraje: z.number().int().nonnegative().optional(),
+  estado: z.enum(["actual", "anterior"]).optional(),
 })
 
 export async function GET() {
-  const session = await auth()
-  if (!session || !session.user) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
   try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
     const motos = await prisma.moto.findMany({
       where: { userId: session.user.id },
       orderBy: { createdAt: "desc" },
     })
     return NextResponse.json({ success: true, motos })
-  } catch (error) {
-    console.error("Error fetching motos:", error)
-    return NextResponse.json({ error: "Error al obtener las motos" }, { status: 500 })
+  } catch (error: any) {
+    console.error("Error fetching boxes:", error)
+    return NextResponse.json({ error: error.message || "Error al obtener los boxes" }, { status: 500 })
   }
 }
 
 export async function POST(req: Request) {
-  const session = await auth()
-  if (!session || !session.user) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
   try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
     const body = await req.json()
     const parsed = motoSchema.safeParse(body)
 
@@ -57,11 +62,11 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Moto registrada con éxito",
+      message: "Box registrado con éxito",
       moto,
     })
-  } catch (error) {
-    console.error("Error creating moto:", error)
-    return NextResponse.json({ error: "Error al crear la moto" }, { status: 500 })
+  } catch (error: any) {
+    console.error("Error creating box:", error)
+    return NextResponse.json({ error: error.message || "Error al registrar el box" }, { status: 500 })
   }
 }

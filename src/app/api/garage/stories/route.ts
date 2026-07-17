@@ -1,15 +1,16 @@
+export const runtime = "edge";
+
 
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 
 export async function GET() {
-  const session = await auth()
-  if (!session || !session.user || !session.user.id) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
   try {
+    const session = await auth()
+    if (!session || !session.user || !session.user.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
     // 1. Get user IDs that the current user follows
     const following = await prisma.follow.findMany({
       where: { followerId: session.user.id },
