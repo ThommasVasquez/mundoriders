@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { z } from "zod"
 
+export const dynamic = "force-dynamic"
+
 const patchSchema = z.object({
   contenido: z.string().min(1).optional(),
   visibilidad: z.enum(["publico", "compas", "solo_yo"]).optional(),

@@ -43,3 +43,8 @@ next-env.d.ts
 # open-next
 .open-next
 
+# wrangler
+.wrangler
+
+# User uploaded files (served from S3/R2 in production)
+public/uploads/

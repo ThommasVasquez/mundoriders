@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { z } from "zod"
 
+export const dynamic = "force-dynamic"
+
 const postSchema = z.object({
   contenido: z.string().min(1, "El contenido de la publicación no puede estar vacío"),
   mediaUrls: z.array(z.string().max(500)).max(4, "Máximo 4 imágenes por publicación"),

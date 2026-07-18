@@ -6,10 +6,15 @@ import { prisma } from "./db"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
 
-const prismaAdapter = PrismaAdapter(prisma)
+let cachedAdapter: any = null
+function getPrismaAdapter() {
+  if (!cachedAdapter) {
+    cachedAdapter = PrismaAdapter(prisma)
+  }
+  return cachedAdapter
+}
 
-const customAdapter = {
-  ...prismaAdapter,
+const customAdapter: any = {
   async createUser(data: any) {
     try {
       const { name, image, emailVerified, ...rest } = data
@@ -47,8 +52,9 @@ const customAdapter = {
     } as any
   },
   async getUser(id: string) {
-    if (!prismaAdapter.getUser) return null
-    const user = await prismaAdapter.getUser(id)
+    const adapter = getPrismaAdapter()
+    if (!adapter.getUser) return null
+    const user = await adapter.getUser(id)
     if (!user) return null
     return {
       ...user,
@@ -57,8 +63,9 @@ const customAdapter = {
     }
   },
   async getUserByEmail(email: string) {
-    if (!prismaAdapter.getUserByEmail) return null
-    const user = await prismaAdapter.getUserByEmail(email)
+    const adapter = getPrismaAdapter()
+    if (!adapter.getUserByEmail) return null
+    const user = await adapter.getUserByEmail(email)
     if (!user) return null
     return {
       ...user,
@@ -68,8 +75,9 @@ const customAdapter = {
   },
   async getUserByAccount(provider_providerAccountId: any) {
     try {
-      if (!prismaAdapter.getUserByAccount) return null
-      const user = await prismaAdapter.getUserByAccount(provider_providerAccountId)
+      const adapter = getPrismaAdapter()
+      if (!adapter.getUserByAccount) return null
+      const user = await adapter.getUserByAccount(provider_providerAccountId)
       if (!user) return null
       return {
         ...user,
@@ -82,8 +90,9 @@ const customAdapter = {
     }
   },
   async getSessionAndUser(sessionToken: string) {
-    if (!prismaAdapter.getSessionAndUser) return null
-    const sessionAndUser = await prismaAdapter.getSessionAndUser(sessionToken)
+    const adapter = getPrismaAdapter()
+    if (!adapter.getSessionAndUser) return null
+    const sessionAndUser = await adapter.getSessionAndUser(sessionToken)
     if (!sessionAndUser) return null
     return {
       session: sessionAndUser.session,
@@ -96,10 +105,32 @@ const customAdapter = {
   },
 }
 
+// Redirigir dinámicamente los demás métodos del adaptador de Prisma de forma perezosa
+const adapterMethods = [
+  "linkAccount",
+  "unlinkAccount",
+  "createSession",
+  "updateSession",
+  "deleteSession",
+  "createVerificationToken",
+  "useVerificationToken"
+]
+
+adapterMethods.forEach(method => {
+  customAdapter[method] = async (...args: any[]) => {
+    const adapter = getPrismaAdapter()
+    if (!adapter[method]) return null
+    return await adapter[method](...args)
+  }
+})
+
 // Durante el build o la fase de carga inicial de módulos en Cloudflare Pages,
 // AUTH_SECRET puede no estar disponible globalmente. Asignamos un placeholder temporal 
 // que será sobrescrito dinámicamente en tiempo de ejecución por la variable real.
-if (!process.env.AUTH_SECRET) {
+// Asignamos el fallback de AUTH_SECRET únicamente durante la compilación (build)
+// para evitar que Next.js falle, pero dejamos que en producción en runtime
+// se use de manera dinámica la variable real inyectada por Cloudflare.
+if (!process.env.AUTH_SECRET && (process.env.NEXT_PHASE === "phase-production-build" || process.env.NODE_ENV === "development")) {
   process.env.AUTH_SECRET = "build-time-and-module-evaluation-fallback-secret"
 }
 
@@ -108,10 +139,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   trustHost: true,
   providers: [
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID!,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
-    }),
+    Google,
+
     Credentials({
       id: "credentials",
       name: "Credentials",

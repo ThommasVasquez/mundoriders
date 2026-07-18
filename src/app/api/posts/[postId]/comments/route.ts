@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { z } from "zod"
 
+export const dynamic = "force-dynamic"
+
 const commentSchema = z.object({
   contenido: z.string().min(1, "El comentario no puede estar vacío").max(500, "El comentario no puede superar los 500 caracteres"),
 })
