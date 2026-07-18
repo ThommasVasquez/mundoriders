@@ -102,8 +102,8 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("Error uploading file:", error)
     return NextResponse.json({
-      error: "Error al subir el archivo",
-      details: error?.message || String(error),
+      error: `Error al subir el archivo: ${error?.message || String(error)}`,
+      details: error?.stack || String(error),
     }, { status: 500 })
   }
 }
