@@ -78,8 +78,13 @@ export async function POST(req: Request) {
     // ── Desarrollo local: guardar en public/uploads/ ─────────────────────────
     if (process.env.NODE_ENV !== "production") {
       try {
-        const fs = await import("fs/promises")
-        const path = await import("path")
+        // @ts-ignore
+        const fs = typeof require !== "undefined" ? eval('require("fs/promises")') : null
+        // @ts-ignore
+        const path = typeof require !== "undefined" ? eval('require("path")') : null
+        if (!fs || !path) {
+          throw new Error("El sistema de archivos local no está disponible en este entorno")
+        }
         const uploadsDir = path.join(process.cwd(), "public", "uploads")
         await fs.mkdir(uploadsDir, { recursive: true })
         await fs.writeFile(path.join(uploadsDir, uniqueFilename), fileData)
