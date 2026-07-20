@@ -1,7 +1,7 @@
 
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
+import { AwsClient } from "aws4fetch"
 
 export const dynamic = "force-dynamic"
 
@@ -41,25 +41,32 @@ export async function POST(req: Request) {
 
     // ── Producción: subir a S3/R2 ───────────────────────────────────────────
     if (s3AccessKey && s3SecretKey && s3Bucket) {
-      const s3 = new S3Client({
+      const aws = new AwsClient({
+        accessKeyId: s3AccessKey,
+        secretAccessKey: s3SecretKey,
         region: process.env.S3_REGION || "auto",
-        endpoint: s3Endpoint,
-        credentials: {
-          accessKeyId: s3AccessKey,
-          secretAccessKey: s3SecretKey,
-        },
+        service: "s3",
       })
 
-      await s3.send(
-        new PutObjectCommand({
-          Bucket: s3Bucket,
-          Key: uniqueFilename,
-          Body: fileData,
-          ContentType: file.type,
-          // ACL public-read para AWS S3. Para Cloudflare R2 con acceso público, omitir ACL.
-          ...(s3Endpoint?.includes("r2.cloudflarestorage.com") ? {} : { ACL: "public-read" }),
-        })
-      )
+      if (!s3Endpoint) {
+        throw new Error("S3_ENDPOINT no está configurado")
+      }
+
+      const cleanEndpoint = s3Endpoint.replace(/\/$/, "")
+      const uploadUrl = `${cleanEndpoint}/${s3Bucket}/${uniqueFilename}`
+
+      const response = await aws.fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+        },
+        body: fileData,
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`R2/S3 upload failed: ${response.status} ${response.statusText} - ${errorText}`)
+      }
 
       // URL pública del archivo subido:
       let publicUrl: string
