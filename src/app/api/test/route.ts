@@ -95,6 +95,39 @@ export async function GET() {
     }
   }
 
+  // Test status query
+  try {
+    const activeStatus = await prisma.userStatus.findFirst({
+      where: {
+        userId: "87f2b92b-5a3c-437e-96dc-2275d88c7cf1",
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    })
+    result.statusQuery = { ok: true, activeStatus }
+  } catch (e: any) {
+    result.statusQuery = { ok: false, error: e?.message ?? String(e), stack: e?.stack?.split("\n").slice(0, 3) || [] }
+  }
+
+  // Test follow query
+  try {
+    const followRecord = await prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: "87f2b92b-5a3c-437e-96dc-2275d88c7cf1",
+          followingId: "87f2b92b-5a3c-437e-96dc-2275d88c7cf1",
+        },
+      },
+    })
+    result.followQuery = { ok: true, followRecord }
+  } catch (e: any) {
+    result.followQuery = { ok: false, error: e?.message ?? String(e), stack: e?.stack?.split("\n").slice(0, 3) || [] }
+  }
+
   // Test 4: prisma
   try {
     const count = await prisma.user.count()
