@@ -72,7 +72,11 @@ export async function GET(request: Request) {
     })
   } catch (error: any) {
     console.error("[Follow API GET Error]:", error)
-    return NextResponse.json({ error: error.message || "Error al verificar seguimiento" }, { status: 500 })
+    return NextResponse.json({
+      success: false,
+      error: `Follow API Error: ${error.message || String(error)}`,
+      stack: error.stack || "",
+    }, { status: 200 })
   }
 }
 

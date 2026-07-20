@@ -279,6 +279,8 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         setIsFollowing(data.following)
         setFollowersCount(data.followersCount)
         setFollowingCount(data.followingCount)
+      } else if (data.error) {
+        showAlert("Error al obtener seguimiento: " + data.error, "Error de Red", "error")
       }
     } catch (err) {
       console.error(err)

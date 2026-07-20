@@ -26,7 +26,11 @@ export async function GET() {
     return NextResponse.json({ activeStatus })
   } catch (error: any) {
     console.error("[Status API GET Error]:", error)
-    return NextResponse.json({ error: error.message || "Error al obtener el estado" }, { status: 500 })
+    return NextResponse.json({
+      success: false,
+      error: `Status API Error: ${error.message || String(error)}`,
+      stack: error.stack || "",
+    }, { status: 200 })
   }
 }
 
