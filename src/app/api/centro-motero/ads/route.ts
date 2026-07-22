@@ -48,9 +48,13 @@ export async function GET() {
     }
 
     return NextResponse.json({ success: true, ads: campaigns })
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching ad campaigns:", error)
-    return NextResponse.json({ error: "Error al obtener campañas publicitarias" }, { status: 500 })
+    return NextResponse.json({
+      success: false,
+      ads: [],
+      error: error?.message || String(error),
+    }, { status: 200 })
   }
 }
 

@@ -19,6 +19,10 @@ export async function GET() {
     })
     const conversationIds = participantConvs.map((pc) => pc.conversationId)
 
+    if (conversationIds.length === 0) {
+      return NextResponse.json({ success: true, conversations: [] })
+    }
+
     // 2. Fetch those conversations with members and last message details
     const conversations = await prisma.conversation.findMany({
       where: { id: { in: conversationIds } },
@@ -47,9 +51,13 @@ export async function GET() {
     })
 
     return NextResponse.json({ success: true, conversations })
-  } catch (error) {
+  } catch (error: any) {
     console.error("[Intercom GET conversations error]:", error)
-    return NextResponse.json({ error: "Error al obtener conversaciones" }, { status: 500 })
+    return NextResponse.json({
+      success: false,
+      conversations: [],
+      error: error?.message || String(error),
+    }, { status: 200 })
   }
 }
 

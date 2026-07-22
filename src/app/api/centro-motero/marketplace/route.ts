@@ -47,9 +47,13 @@ export async function GET(request: Request) {
     })
 
     return NextResponse.json({ success: true, items })
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching marketplace items:", error)
-    return NextResponse.json({ error: "Error al obtener artículos del marketplace" }, { status: 500 })
+    return NextResponse.json({
+      success: false,
+      items: [],
+      error: error?.message || String(error),
+    }, { status: 200 })
   }
 }
 

@@ -54,8 +54,12 @@ export async function GET() {
     })
 
     return NextResponse.json({ success: true, stories: sortedStories })
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching stories:", error)
-    return NextResponse.json({ error: "Error al obtener las historias" }, { status: 500 })
+    return NextResponse.json({
+      success: false,
+      stories: [],
+      error: error?.message || String(error),
+    }, { status: 200 })
   }
 }

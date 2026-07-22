@@ -65,9 +65,14 @@ export async function GET(request: Request) {
         longitude: Number(item.longitude),
       }))
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching convoy location:", error)
-    return NextResponse.json({ error: "Error al obtener ubicaciones del convoy" }, { status: 500 })
+    return NextResponse.json({
+      success: false,
+      rideId: rideId || "",
+      convoy: [],
+      error: error?.message || String(error),
+    }, { status: 200 })
   }
 }
 
