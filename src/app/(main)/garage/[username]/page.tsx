@@ -92,6 +92,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
 
   // Moto form states
   const [showAddMoto, setShowAddMoto] = useState(false)
+  const [editingMoto, setEditingMoto] = useState<Moto | null>(null)
   const [motoMarca, setMotoMarca] = useState("")
   const [motoModelo, setMotoModelo] = useState("")
   const [motoCilindraje, setMotoCilindraje] = useState(150)
@@ -446,6 +447,71 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
       fetchProfile()
     } catch (err: any) {
       showAlert(err.message, "Error al agregar box", "error")
+    }
+  }
+
+  const handleStartEditMoto = (moto: Moto) => {
+    setEditingMoto(moto)
+    setShowAddMoto(false)
+    setMotoMarca(moto.marca || "")
+    setMotoModelo(moto.modelo || "")
+    setMotoCilindraje(moto.cilindraje || 150)
+    setMotoAnio(moto.anio || new Date().getFullYear())
+    setMotoApodo(moto.apodo || "")
+    setMotoFoto(moto.fotoUrl || "")
+    setMotoGaleria(moto.galeria || [])
+    setMotoMods(moto.mods || [])
+    setMotoKilometraje(moto.kilometraje || 0)
+    setMotoEstado(moto.estado || "actual")
+    setNewMod((moto.mods || []).join(", "))
+  }
+
+  const handleUpdateMoto = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingMoto) return
+
+    try {
+      const parsedMods = newMod
+        ? newMod.split(",").map((m) => m.trim()).filter(Boolean)
+        : []
+
+      const res = await fetch(`/api/garage/boxes/${editingMoto.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          marca: motoMarca,
+          modelo: motoModelo,
+          cilindraje: Number(motoCilindraje),
+          anio: Number(motoAnio),
+          apodo: motoApodo || null,
+          fotoUrl: motoFoto || null,
+          galeria: motoGaleria,
+          mods: parsedMods,
+          kilometraje: Number(motoKilometraje),
+          estado: motoEstado,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+
+      toast.success("Box actualizado correctamente")
+      setEditingMoto(null)
+      setMotoMarca("")
+      setMotoModelo("")
+      setMotoCilindraje(150)
+      setMotoAnio(new Date().getFullYear())
+      setMotoApodo("")
+      setMotoFoto("")
+      setMotoGaleria([])
+      setMotoMods([])
+      setMotoKilometraje(0)
+      setMotoEstado("actual")
+      setNewMod("")
+
+      fetchProfile()
+    } catch (err: any) {
+      showAlert(err.message, "Error al actualizar box", "error")
     }
   }
 
@@ -1051,9 +1117,12 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-wide uppercase flex items-center gap-2">
               <Wrench className="w-6 h-6 text-primary-orange" /> Mi Garaje Biker
             </h2>
-            {isOwnProfile && !showAddMoto && (
+            {isOwnProfile && !showAddMoto && !editingMoto && (
               <button
-                onClick={() => setShowAddMoto(true)}
+                onClick={() => {
+                  setEditingMoto(null)
+                  setShowAddMoto(true)
+                }}
                 className="py-1.5 px-3.5 bg-primary-orange/10 hover:bg-primary-orange/20 border border-primary-orange/30 text-xs text-primary-orange font-bold rounded-lg flex items-center gap-1.5 cursor-pointer transition-all"
               >
                 <Plus className="w-4 h-4" /> Registrar Box
@@ -1061,10 +1130,13 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
             )}
           </div>
 
-          {/* Add Moto (Box) Form */}
-          {showAddMoto && (
-            <form onSubmit={handleAddMoto} className="glass-panel p-6 rounded-2xl space-y-4">
-              <h3 className="text-base font-bold text-white">Agregar Nuevo Box (Moto)</h3>
+          {/* Add / Edit Moto (Box) Form */}
+          {(showAddMoto || editingMoto) && (
+            <form onSubmit={editingMoto ? handleUpdateMoto : handleAddMoto} className="glass-panel p-6 rounded-2xl space-y-4 border border-primary-orange/30">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                {editingMoto ? <Edit2 className="w-4 h-4 text-primary-orange" /> : <Plus className="w-4 h-4 text-primary-orange" />}
+                {editingMoto ? `Editar Box (${editingMoto.marca} ${editingMoto.modelo})` : "Agregar Nuevo Box (Moto)"}
+              </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase text-text-muted mb-1.5">Marca</label>
@@ -1217,7 +1289,10 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowAddMoto(false)}
+                  onClick={() => {
+                    setShowAddMoto(false)
+                    setEditingMoto(null)
+                  }}
                   className="py-2 px-4 bg-white/5 hover:bg-white/10 text-xs font-medium rounded-lg cursor-pointer"
                 >
                   Cancelar
@@ -1226,7 +1301,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                   type="submit"
                   className="py-2 px-4 bg-primary-orange hover:bg-primary-orange-hover text-xs font-bold rounded-lg text-white cursor-pointer"
                 >
-                  Agregar Box
+                  {editingMoto ? "Guardar Cambios" : "Agregar Box"}
                 </button>
               </div>
             </form>
@@ -1258,13 +1333,24 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
                     
                     {isOwnProfile && (
-                      <button
-                        onClick={() => handleDeleteMoto(moto.id)}
-                        className="absolute top-3 right-3 p-2 bg-red-950/80 hover:bg-red-600 border border-red-500/20 hover:border-red-500 rounded-lg text-red-200 hover:text-white transition-colors cursor-pointer z-10"
-                        title="Eliminar Moto"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditMoto(moto)}
+                          className="p-2 bg-neutral-900/90 hover:bg-neutral-800 border border-white/10 hover:border-primary-orange/50 rounded-lg text-white transition-colors cursor-pointer"
+                          title="Editar Moto"
+                        >
+                          <Edit2 className="w-4 h-4 text-primary-orange" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMoto(moto.id)}
+                          className="p-2 bg-red-950/80 hover:bg-red-600 border border-red-500/20 hover:border-red-500 rounded-lg text-red-200 hover:text-white transition-colors cursor-pointer"
+                          title="Eliminar Moto"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     )}
 
                     <div className="absolute bottom-3 left-4 flex flex-wrap gap-1.5 items-center">

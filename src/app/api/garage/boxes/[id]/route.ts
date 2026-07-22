@@ -7,22 +7,26 @@ import { z } from "zod"
 
 const motoUpdateSchema = z.object({
   marca: z.string().min(2, "La marca es requerida").optional(),
-  modelo: z.string().min(2, "El modelo es requerido").optional(),
+  modelo: z.string().min(1, "El modelo es requerido").optional(),
   cilindraje: z.number().int().positive("El cilindraje debe ser positivo").optional(),
-  anio: z.number().int().min(1900).max(new Date().getFullYear() + 1).optional(),
+  anio: z.number().int().min(1900).max(new Date().getFullYear() + 2).optional(),
   apodo: z.string().optional().nullable(),
   fotoUrl: z.string().max(500, "La foto no puede superar los 500 caracteres").optional().nullable(),
+  galeria: z.array(z.string()).optional(),
+  mods: z.array(z.string()).optional(),
+  kilometraje: z.number().int().nonnegative().optional(),
+  estado: z.enum(["actual", "anterior"]).optional(),
 })
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth()
-  if (!session || !session.user) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
-  const { id } = await params
-
   try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
+    const { id } = await params
+
     const moto = await prisma.moto.findFirst({
       where: { id, userId: session.user.id },
     })
@@ -51,9 +55,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       message: "Moto actualizada correctamente",
       moto: updatedMoto,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating moto:", error)
-    return NextResponse.json({ error: "Error al actualizar la moto" }, { status: 500 })
+    return NextResponse.json({ error: error?.message || "Error al actualizar la moto" }, { status: 500 })
   }
 }
 
