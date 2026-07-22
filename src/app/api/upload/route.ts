@@ -72,11 +72,8 @@ export async function POST(req: Request) {
       let publicUrl: string
       if (s3PublicUrl) {
         publicUrl = `${s3PublicUrl.replace(/\/$/, "")}/${uniqueFilename}`
-      } else if (s3Endpoint?.includes("r2.cloudflarestorage.com")) {
-        // R2 sin dominio público configurado: devolver URL del bucket público si existe
-        publicUrl = `https://${s3Bucket}.r2.dev/${uniqueFilename}`
       } else {
-        publicUrl = `https://${s3Bucket}.s3.amazonaws.com/${uniqueFilename}`
+        publicUrl = `/api/media/${uniqueFilename}`
       }
 
       return NextResponse.json({ success: true, url: publicUrl })
