@@ -72,12 +72,12 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const session = await auth()
-  if (!session || !session.user || !session.user.id) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
-
   try {
+    const session = await auth()
+    if (!session || !session.user || !session.user.id) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
     const { rideId, rol, latitude, longitude } = await request.json()
 
     if (!rideId || !latitude || !longitude) {

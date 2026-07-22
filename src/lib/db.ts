@@ -15,33 +15,33 @@ if (typeof globalThis.WebSocket === "undefined") {
   }
 }
 
-// Cache de instancias separadas: una real (con URL real) y una dummy (para build-time).
-let prismaRealInstance: PrismaClient | null = null
+// Cache de instancia únicamente en entorno de desarrollo local (Node.js HMR).
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined
+}
 
 export function getPrisma(): PrismaClient {
-  const databaseUrl = process.env.DATABASE_URL
+  const databaseUrl = process.env.DATABASE_URL || "postgresql://placeholder:placeholder@localhost:5432/placeholder"
 
-  // Si tenemos URL real, usar la instancia cacheada (o crearla)
-  if (databaseUrl && !databaseUrl.includes("placeholder")) {
-    if (!prismaRealInstance) {
+  // En desarrollo local (Node.js), reutilizar la instancia en globalThis para evitar agotar conexiones durante HMR
+  if (process.env.NODE_ENV === "development") {
+    if (!globalForPrisma.prisma) {
       const pool = new Pool({ connectionString: databaseUrl })
       const adapter = new PrismaNeon(pool)
-      prismaRealInstance = new PrismaClient({ adapter })
+      globalForPrisma.prisma = new PrismaClient({ adapter })
     }
-    return prismaRealInstance
+    return globalForPrisma.prisma
   }
 
-  // Sin URL real (build-time / module eval sin env vars):
-  // Creamos una instancia dummy nueva cada vez — nunca se usará para queries reales.
-  // Esto evita que el módulo crashee durante la compilación.
-  const placeholderUrl = "postgresql://placeholder:placeholder@localhost:5432/placeholder"
-  const pool = new Pool({ connectionString: placeholderUrl })
+  // En producción (Cloudflare Workers), instanciar un nuevo Pool y PrismaClient por cada llamada/solicitud.
+  // Esto previene de forma definitiva el error "Cannot perform I/O on behalf of a different request" de Workers.
+  const pool = new Pool({ connectionString: databaseUrl })
   const adapter = new PrismaNeon(pool)
   return new PrismaClient({ adapter })
 }
 
-// Proxy que resuelve el PrismaClient real en el momento de la llamada,
-// garantizando que siempre use la URL de entorno correcta en runtime.
+// Proxy que resuelve el PrismaClient en el momento de la llamada,
+// garantizando que use la URL y el contexto de solicitud correctos.
 export const prisma = new Proxy({} as PrismaClient, {
   get(_target, prop) {
     const client = getPrisma()
@@ -52,3 +52,4 @@ export const prisma = new Proxy({} as PrismaClient, {
     return value
   },
 })
+
