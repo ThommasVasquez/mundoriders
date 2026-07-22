@@ -749,10 +749,27 @@ export default function FeedPage() {
           {session && session.user && (
             <div className="glass-panel rounded-2xl overflow-hidden shadow-xl">
               {/* Cover mini image background */}
-              <div className="h-16 bg-gradient-to-r from-primary-orange to-amber-600 relative opacity-85" />
+              <div className="h-20 relative w-full overflow-hidden bg-gradient-to-r from-primary-orange to-amber-600">
+                {profileStats?.fotoPortada ? (
+                  <img
+                    src={profileStats.fotoPortada.split("?pos=")[0]}
+                    alt="Portada de perfil"
+                    style={{
+                      objectPosition: `50% ${
+                        profileStats.fotoPortada.includes("?pos=")
+                          ? profileStats.fotoPortada.split("?pos=")[1]
+                          : "50"
+                      }%`,
+                    }}
+                    className="w-full h-full object-cover select-none"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-r from-primary-orange to-amber-600 opacity-85" />
+                )}
+              </div>
               
               {/* Profile Details Container */}
-              <div className="px-5 pb-5 relative -mt-8 flex flex-col items-center text-center">
+              <div className="px-5 pb-5 relative -mt-10 flex flex-col items-center text-center">
                 <Link href={`/garage/${profileStats?.username || session.user.username || session.user.id}`} className="group">
                   {profileStats?.fotoPerfil ? (
                     <img
