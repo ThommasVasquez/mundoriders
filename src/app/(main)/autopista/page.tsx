@@ -98,6 +98,37 @@ function VerifiedBadge({ username, className = "w-3.5 h-3.5" }: { username?: str
   return null
 }
 
+function PostCardSkeleton() {
+  return (
+    <div className="glass-panel p-5 rounded-2xl shadow-xl space-y-4 animate-pulse">
+      {/* Header Skeleton */}
+      <div className="flex items-center space-x-3">
+        <div className="w-10 h-10 rounded-full bg-white/10 flex-shrink-0" />
+        <div className="space-y-2 flex-1">
+          <div className="h-3.5 bg-white/10 rounded-md w-1/3" />
+          <div className="h-2.5 bg-white/5 rounded-md w-1/4" />
+        </div>
+      </div>
+      {/* Text Lines Skeleton */}
+      <div className="space-y-2 py-1">
+        <div className="h-3.5 bg-white/10 rounded-md w-full" />
+        <div className="h-3.5 bg-white/10 rounded-md w-4/5" />
+        <div className="h-3 bg-white/5 rounded-md w-2/3" />
+      </div>
+      {/* Media Placeholder Skeleton */}
+      <div className="w-full h-48 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full bg-white/5" />
+      </div>
+      {/* Action Bar Skeleton */}
+      <div className="flex items-center justify-between pt-3 border-t border-white/5">
+        <div className="h-7 w-20 bg-white/5 rounded-lg" />
+        <div className="h-7 w-20 bg-white/5 rounded-lg" />
+        <div className="h-7 w-20 bg-white/5 rounded-lg" />
+      </div>
+    </div>
+  )
+}
+
 export default function FeedPage() {
   const { data: session } = useSession()
   const router = useRouter()
@@ -1227,9 +1258,10 @@ export default function FeedPage() {
 
           {/* Posts Feed */}
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <Loader2 className="w-8 h-8 text-primary-orange animate-spin mb-2" />
-              <span className="text-xs text-text-muted">Cargando publicaciones...</span>
+            <div className="space-y-6">
+              <PostCardSkeleton />
+              <PostCardSkeleton />
+              <PostCardSkeleton />
             </div>
           ) : posts.length === 0 ? (
             <div className="glass-panel p-8 text-center rounded-2xl shadow-xl">

@@ -25,23 +25,15 @@ export async function GET() {
       })
       const followingIds = following.map((f) => f.followingId)
 
-      // 2. Obtener los clubes del usuario
-      const clubMemberships = await prisma.clubMember.findMany({
-        where: { userId: session.user.id },
-        select: { clubId: true },
-      })
-      const clubIds = clubMemberships.map((cm) => cm.clubId)
-
-      // 3. Buscar posts de seguidos o del propio usuario (o de sus clubes)
+      // 2. Buscar los 25 posts más recientes de seguidos o del propio usuario
       posts = await prisma.post.findMany({
         where: {
           OR: [
             { userId: session.user.id },
             { userId: { in: followingIds } },
-            // Si el post está asociado a una ruta que pertenece a un club, o si en el futuro se asocia a club,
-            // por ahora los posts son de usuarios. Si no sigue a nadie, mostramos posts globales para no dejar vacío el feed.
           ],
         },
+        take: 25,
         include: {
           user: {
             select: {
