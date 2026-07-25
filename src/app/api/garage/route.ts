@@ -23,37 +23,52 @@ const profileUpdateSchema = z.object({
 
 export async function GET(req: Request) {
   try {
-    const session = await auth()
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    let session = null
+    try {
+      session = await auth()
+    } catch (e) {
+      console.warn("auth() failed in GET /api/garage:", e)
     }
 
     const { searchParams } = new URL(req.url)
     const usernameParam = searchParams.get("username")
 
-    let whereClause: any = { id: session.user.id }
+    let whereClause: any = session?.user?.id ? { id: session.user.id } : null
+
     if (usernameParam) {
       let cleanUsername = decodeURIComponent(usernameParam).trim()
-      if (cleanUsername.includes("%")) {
-        cleanUsername = decodeURIComponent(cleanUsername).trim()
+      while (cleanUsername.includes("%")) {
+        try {
+          const decoded = decodeURIComponent(cleanUsername).trim()
+          if (decoded === cleanUsername) break
+          cleanUsername = decoded
+        } catch {
+          break
+        }
       }
+
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanUsername)
-      
+
       if (isUuid) {
         whereClause = { id: cleanUsername }
       } else {
-        if (!cleanUsername.startsWith("@")) {
-          cleanUsername = "@" + cleanUsername
+        const rawName = cleanUsername.replace(/^@+/, "")
+        whereClause = {
+          OR: [
+            { username: "@" + rawName },
+            { username: rawName },
+            { username: { equals: "@" + rawName, mode: "insensitive" } },
+            { username: { equals: rawName, mode: "insensitive" } },
+          ],
         }
-        whereClause = { username: cleanUsername }
       }
     }
 
-    if (whereClause.id === undefined && whereClause.username === undefined) {
-      return NextResponse.json({ error: "Identificador de usuario inválido" }, { status: 400 })
+    if (!whereClause) {
+      return NextResponse.json({ error: "No autorizado o identificador no especificado" }, { status: 401 })
     }
 
-    const userProfile = await prisma.user.findUnique({
+    const userProfile = await prisma.user.findFirst({
       where: whereClause,
       include: {
         motos: true,
@@ -86,22 +101,41 @@ export async function GET(req: Request) {
     }
 
     // Calcular estadísticas en tiempo real
-    const ridesJoined = await prisma.rideParticipant.findMany({
-      where: { userId: userProfile.id, estado: "CONFIRMADO" },
-      include: { ride: { include: { route: true } } },
-    })
-    const kmRodadas = ridesJoined.reduce((sum, rp) => sum + (rp.ride.route?.distanciaKm || 0), 0)
+    let kmRodadas = 0
+    let ridesJoinedCount = 0
+    try {
+      const ridesJoined = await prisma.rideParticipant.findMany({
+        where: { userId: userProfile.id, estado: "CONFIRMADO" },
+        include: { ride: { include: { route: true } } },
+      })
+      ridesJoinedCount = ridesJoined.length
+      kmRodadas = ridesJoined.reduce((sum, rp) => sum + (rp.ride?.route?.distanciaKm || 0), 0)
+    } catch (e) {
+      console.warn("Error calculating ridesJoined stats:", e)
+    }
 
-    const routesCreated = await prisma.route.findMany({
-      where: { creadorId: userProfile.id }
-    })
-    const kmRutasCreadas = routesCreated.reduce((sum, r) => sum + r.distanciaKm, 0)
+    let kmRutasCreadas = 0
+    let routesCreatedCount = 0
+    try {
+      const routesCreated = await prisma.route.findMany({
+        where: { creadorId: userProfile.id },
+      })
+      routesCreatedCount = routesCreated.length
+      kmRutasCreadas = routesCreated.reduce((sum, r) => sum + (r.distanciaKm || 0), 0)
+    } catch (e) {
+      console.warn("Error calculating routesCreated stats:", e)
+    }
 
     const kmTotales = Math.round(kmRodadas + kmRutasCreadas)
-    const ridesOrganizedCount = await prisma.ride.count({ where: { organizadorId: userProfile.id } })
-    const ridesParticipatedCount = ridesJoined.length
-    const routesCreatedCount = routesCreated.length
-    const boxesCount = userProfile.motos.length
+    let ridesOrganizedCount = 0
+    try {
+      ridesOrganizedCount = await prisma.ride.count({ where: { organizadorId: userProfile.id } })
+    } catch (e) {
+      console.warn("Error counting ridesOrganized:", e)
+    }
+
+    const ridesParticipatedCount = ridesJoinedCount
+    const boxesCount = userProfile.motos ? userProfile.motos.length : 0
 
     // Fórmula modular de nivel de experiencia
     const expScore = (kmTotales * 0.5) + (ridesOrganizedCount * 15) + (ridesParticipatedCount * 10) + (boxesCount * 5)
@@ -116,11 +150,15 @@ export async function GET(req: Request) {
     }
 
     if (userProfile.nivelExperiencia !== calculatedLevel) {
-      await prisma.user.update({
-        where: { id: userProfile.id },
-        data: { nivelExperiencia: calculatedLevel },
-      })
-      userProfile.nivelExperiencia = calculatedLevel
+      try {
+        await prisma.user.update({
+          where: { id: userProfile.id },
+          data: { nivelExperiencia: calculatedLevel },
+        })
+        userProfile.nivelExperiencia = calculatedLevel
+      } catch (e) {
+        console.warn("Error updating calculated level:", e)
+      }
     }
 
     return NextResponse.json({
@@ -132,11 +170,14 @@ export async function GET(req: Request) {
         ridesParticipatedCount,
         routesCreatedCount,
         boxesCount,
-      }
+      },
     })
   } catch (error: any) {
     console.error("[Profile API GET Error]:", error)
-    return NextResponse.json({ error: error.message || "Error al obtener el perfil" }, { status: 500 })
+    return NextResponse.json({
+      success: false,
+      error: error.message || "Error al obtener el perfil",
+    }, { status: 200 })
   }
 }
 

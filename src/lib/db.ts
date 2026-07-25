@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client"
 import { Pool, neonConfig } from "@neondatabase/serverless"
 import { PrismaNeon } from "@prisma/adapter-neon"
+import { AsyncLocalStorage } from "node:async_hooks"
 
 // Cloudflare Workers tiene WebSocket nativo — no necesita el paquete ws.
 // En Node.js local (dev), WebSocket no existe nativamente, así que lo cargamos.
@@ -11,7 +12,6 @@ if (typeof globalThis.WebSocket === "undefined") {
     neonConfig.webSocketConstructor = ws
   } catch {
     // En CF Workers con nodejs_compat, require de paquetes npm no aplica.
-    // Si llegamos aquí es CF Workers y el WebSocket nativo se usa automáticamente.
   }
 }
 
@@ -20,10 +20,15 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
+// Almacenamiento desacoplado por solicitud (AsyncLocalStorage) para producción.
+// Esto permite que todas las consultas dentro de una misma solicitud compartan
+// la misma conexión WebSocket de Neon, pero evita compartir sockets entre solicitudes distintas.
+const requestPrismaStore = new AsyncLocalStorage<PrismaClient>()
+
 export function getPrisma(): PrismaClient {
   const databaseUrl = process.env.DATABASE_URL || "postgresql://placeholder:placeholder@localhost:5432/placeholder"
 
-  // En desarrollo local (Node.js), reutilizar la instancia en globalThis para evitar agotar conexiones durante HMR
+  // En desarrollo local (Node.js), reutilizar la instancia en globalThis
   if (process.env.NODE_ENV === "development") {
     if (!globalForPrisma.prisma) {
       const pool = new Pool({ connectionString: databaseUrl })
@@ -33,11 +38,24 @@ export function getPrisma(): PrismaClient {
     return globalForPrisma.prisma
   }
 
-  // En producción (Cloudflare Workers), instanciar un nuevo Pool y PrismaClient por cada llamada/solicitud.
-  // Esto previene de forma definitiva el error "Cannot perform I/O on behalf of a different request" de Workers.
+  // 1. Si ya existe un cliente en el contexto de la solicitud actual, reutilizarlo
+  const currentClient = requestPrismaStore.getStore()
+  if (currentClient) {
+    return currentClient
+  }
+
+  // 2. Si es la primera consulta de esta solicitud, crear la conexión e introducirla al contexto
   const pool = new Pool({ connectionString: databaseUrl })
   const adapter = new PrismaNeon(pool)
-  return new PrismaClient({ adapter })
+  const client = new PrismaClient({ adapter })
+
+  try {
+    requestPrismaStore.enterWith(client)
+  } catch {
+    // Fallback si enterWith no estuviera disponible
+  }
+
+  return client
 }
 
 // Proxy que resuelve el PrismaClient en el momento de la llamada,
