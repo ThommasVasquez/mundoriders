@@ -20,6 +20,15 @@ model User {
   ciudad            String?
   rutasFrecuentes   String?
   rutaSonada        String?
+  tipoSangre        String?
+  alergias          String?
+  casco             String?
+  intercom          String?
+  chaqueta          String?
+  guantesBotas      String?
+  maxKmDia          Int?                      @default(0)
+  departamentosVisitados String[]            @default([])
+  estiloTags        String[]                  @default([])
   nivelExperiencia  NivelExperiencia?         @default(PRINCIPIANTE)
   tipoRider         TipoRider?                @default(URBANO)
   createdAt         DateTime                  @default(now())
@@ -98,6 +107,9 @@ model Moto {
   galeria     String[] @default([])
   mods        String[] @default([])
   kilometraje Int      @default(0)
+  proximoCambioAceiteKm Int? @default(0)
+  llantasMarcaModelo    String?
+  escapeReferencia      String?
   estado      String   @default("actual")
   createdAt   DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)

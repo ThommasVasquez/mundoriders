@@ -8,7 +8,7 @@ import { useNotification } from "@/components/NotificationProvider"
 import { 
   User, MapPin, Award, ShieldAlert, Plus, Trash2, Edit2, Check, X,
   Wrench, Calendar, Tag, Compass, Sparkles, Loader2, Image, CheckCircle2, Navigation,
-  Camera, Upload, Flame, UserPlus, UserCheck, Users
+  Camera, Upload, Flame, UserPlus, UserCheck, Users, Droplet, Volume2, ShieldCheck, Heart, Zap
 } from "lucide-react"
 import gsap from "gsap"
 
@@ -24,6 +24,9 @@ type Moto = {
   galeria: string[]
   mods: string[]
   kilometraje: number
+  proximoCambioAceiteKm?: number | null
+  llantasMarcaModelo?: string | null
+  escapeReferencia?: string | null
   estado: "actual" | "anterior"
 }
 
@@ -37,6 +40,15 @@ type UserProfile = {
   ciudad: string | null
   rutasFrecuentes: string | null
   rutaSonada: string | null
+  tipoSangre?: string | null
+  alergias?: string | null
+  casco?: string | null
+  intercom?: string | null
+  chaqueta?: string | null
+  guantesBotas?: string | null
+  maxKmDia?: number | null
+  departamentosVisitados?: string[]
+  estiloTags?: string[]
   nivelExperiencia: "PRINCIPIANTE" | "INTERMEDIO" | "AVANZADO" | "EXPERTO"
   tipoRider: "TOURING" | "URBANO" | "OFFROAD" | "SPORT" | "CUSTOM"
   motos: Moto[]
@@ -82,6 +94,20 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const [tipoRider, setTipoRider] = useState<UserProfile["tipoRider"]>("URBANO")
   const [fotoPerfil, setFotoPerfil] = useState("")
   const [fotoPortada, setFotoPortada] = useState("")
+  const [tipoSangre, setTipoSangre] = useState("")
+  const [alergias, setAlergias] = useState("")
+  const [casco, setCasco] = useState("")
+  const [intercom, setIntercom] = useState("")
+  const [chaqueta, setChaqueta] = useState("")
+  const [guantesBotas, setGuantesBotas] = useState("")
+  const [maxKmDia, setMaxKmDia] = useState<number>(0)
+  const [departamentosInput, setDepartamentosInput] = useState("")
+  const [estiloTagsInput, setEstiloTagsInput] = useState("")
+
+  // Moto maintenance form states
+  const [motoProximoAceite, setMotoProximoAceite] = useState<number>(0)
+  const [motoLlantas, setMotoLlantas] = useState("")
+  const [motoEscape, setMotoEscape] = useState("")
 
   // Follow & Story states
   const [isFollowing, setIsFollowing] = useState(false)
@@ -261,10 +287,18 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
       setCiudad(data.profile.ciudad || "")
       setRutasFrecuentes(data.profile.rutasFrecuentes || "")
       setRutaSonada(data.profile.rutaSonada || "")
-      setNivelExperiencia(data.profile.nivelExperiencia || "PRINCIPIANTE")
       setTipoRider(data.profile.tipoRider || "URBANO")
       setFotoPerfil(data.profile.fotoPerfil || "")
       setFotoPortada(data.profile.fotoPortada || "")
+      setTipoSangre(data.profile.tipoSangre || "")
+      setAlergias(data.profile.alergias || "")
+      setCasco(data.profile.casco || "")
+      setIntercom(data.profile.intercom || "")
+      setChaqueta(data.profile.chaqueta || "")
+      setGuantesBotas(data.profile.guantesBotas || "")
+      setMaxKmDia(data.profile.maxKmDia || 0)
+      setDepartamentosInput((data.profile.departamentosVisitados || []).join(", "))
+      setEstiloTagsInput((data.profile.estiloTags || []).join(", "))
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -377,6 +411,19 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           tipoRider,
           fotoPerfil: fotoPerfil || null,
           fotoPortada: fotoPortada || null,
+          tipoSangre: tipoSangre || null,
+          alergias: alergias || null,
+          casco: casco || null,
+          intercom: intercom || null,
+          chaqueta: chaqueta || null,
+          guantesBotas: guantesBotas || null,
+          maxKmDia: Number(maxKmDia) || 0,
+          departamentosVisitados: departamentosInput
+            ? departamentosInput.split(",").map((d) => d.trim()).filter(Boolean)
+            : [],
+          estiloTags: estiloTagsInput
+            ? estiloTagsInput.split(",").map((t) => t.trim().startsWith("#") ? t.trim() : `#${t.trim()}`).filter(Boolean)
+            : [],
         }),
       })
 
@@ -424,6 +471,9 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           galeria: motoGaleria,
           mods: parsedMods,
           kilometraje: Number(motoKilometraje),
+          proximoCambioAceiteKm: Number(motoProximoAceite) || 0,
+          llantasMarcaModelo: motoLlantas || null,
+          escapeReferencia: motoEscape || null,
           estado: motoEstado,
         }),
       })
@@ -441,6 +491,9 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
       setMotoGaleria([])
       setMotoMods([])
       setMotoKilometraje(0)
+      setMotoProximoAceite(0)
+      setMotoLlantas("")
+      setMotoEscape("")
       setMotoEstado("actual")
       setNewMod("")
       
@@ -462,6 +515,9 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     setMotoGaleria(moto.galeria || [])
     setMotoMods(moto.mods || [])
     setMotoKilometraje(moto.kilometraje || 0)
+    setMotoProximoAceite(moto.proximoCambioAceiteKm || 0)
+    setMotoLlantas(moto.llantasMarcaModelo || "")
+    setMotoEscape(moto.escapeReferencia || "")
     setMotoEstado(moto.estado || "actual")
     setNewMod((moto.mods || []).join(", "))
   }
@@ -488,6 +544,9 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           galeria: motoGaleria,
           mods: parsedMods,
           kilometraje: Number(motoKilometraje),
+          proximoCambioAceiteKm: Number(motoProximoAceite) || 0,
+          llantasMarcaModelo: motoLlantas || null,
+          escapeReferencia: motoEscape || null,
           estado: motoEstado,
         }),
       })
@@ -506,6 +565,9 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
       setMotoGaleria([])
       setMotoMods([])
       setMotoKilometraje(0)
+      setMotoProximoAceite(0)
+      setMotoLlantas("")
+      setMotoEscape("")
       setMotoEstado("actual")
       setNewMod("")
 
@@ -912,7 +974,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
               </p>
 
               {profile && (
-                <div className="flex flex-col gap-2 pt-2 border-t border-white/5 w-full">
+                <div className="flex flex-col gap-3 pt-3 border-t border-white/5 w-full">
                   {profile.rutasFrecuentes && (
                     <div className="flex items-center gap-1.5 text-xs text-text-muted justify-center sm:justify-start">
                       <Compass className="w-3.5 h-3.5 text-primary-orange" />
@@ -925,14 +987,105 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                       <span>Ruta soñada / Próximo destino: <strong className="text-emerald-300 italic font-semibold">{profile.rutaSonada}</strong></span>
                     </div>
                   )}
+
+                  {/* Pasaporte Biker: Estilos & Departamentos Conquistados */}
+                  {((profile.estiloTags && profile.estiloTags.length > 0) || (profile.departamentosVisitados && profile.departamentosVisitados.length > 0) || (profile.maxKmDia && profile.maxKmDia > 0)) && (
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
+                      {profile.maxKmDia ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/15 border border-amber-500/30 text-amber-400">
+                          🔥 Max {profile.maxKmDia} km en 1 día
+                        </span>
+                      ) : null}
+
+                      {profile.estiloTags?.map((tag: string) => (
+                        <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-white/5 border border-white/10 text-primary-orange">
+                          {tag}
+                        </span>
+                      ))}
+
+                      {profile.departamentosVisitados?.map((dept: string) => (
+                        <span key={dept} className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/15 border border-blue-500/25 text-blue-300">
+                          🇨🇴 {dept}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
+            {/* SECCIÓN EPP & FICHA MÉDICA S.O.S */}
+            {profile && (profile.casco || profile.intercom || profile.chaqueta || profile.guantesBotas || profile.tipoSangre || profile.alergias) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-white/5 text-left">
+                {/* Equipamiento & EPP Card */}
+                {(profile.casco || profile.intercom || profile.chaqueta || profile.guantesBotas) && (
+                  <div className="p-4 bg-white/5 border border-white/5 rounded-2xl space-y-3">
+                    <h4 className="font-extrabold text-white text-xs uppercase tracking-wider flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary-orange" /> Equipamiento & EPP del Piloto
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                      {profile.casco && (
+                        <div className="p-2 bg-black/30 border border-white/5 rounded-xl">
+                          <span className="block text-[10px] text-text-muted font-bold uppercase">🪖 Casco & Visor</span>
+                          <span className="font-semibold text-white truncate block mt-0.5">{profile.casco}</span>
+                        </div>
+                      )}
+                      {profile.intercom && (
+                        <div className="p-2 bg-black/30 border border-white/5 rounded-xl">
+                          <span className="block text-[10px] text-text-muted font-bold uppercase flex items-center gap-1">
+                            <Volume2 className="w-3 h-3 text-indigo-400" /> Intercomunicador
+                          </span>
+                          <span className="font-semibold text-white truncate block mt-0.5">{profile.intercom}</span>
+                        </div>
+                      )}
+                      {profile.chaqueta && (
+                        <div className="p-2 bg-black/30 border border-white/5 rounded-xl">
+                          <span className="block text-[10px] text-text-muted font-bold uppercase">🧥 Chaqueta & Airbag</span>
+                          <span className="font-semibold text-white truncate block mt-0.5">{profile.chaqueta}</span>
+                        </div>
+                      )}
+                      {profile.guantesBotas && (
+                        <div className="p-2 bg-black/30 border border-white/5 rounded-xl">
+                          <span className="block text-[10px] text-text-muted font-bold uppercase">🧤 Guantes & Botas</span>
+                          <span className="font-semibold text-white truncate block mt-0.5">{profile.guantesBotas}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Ficha Médica & S.O.S Card */}
+                {(profile.tipoSangre || profile.alergias || (profile.emergencyContacts && profile.emergencyContacts.length > 0)) && (
+                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl space-y-3">
+                    <h4 className="font-extrabold text-red-400 text-xs uppercase tracking-wider flex items-center gap-2">
+                      <ShieldAlert className="w-4 h-4 text-red-400" /> Ficha Médica S.O.S en Ruta
+                    </h4>
+                    <div className="flex flex-wrap items-center gap-3">
+                      {profile.tipoSangre && (
+                        <div className="px-3 py-1.5 bg-red-500/20 border border-red-500/30 rounded-xl flex items-center gap-2">
+                          <Droplet className="w-4 h-4 text-red-400 fill-red-400/30" />
+                          <div>
+                            <span className="block text-[9px] uppercase font-bold text-red-300">Tipo de Sangre</span>
+                            <span className="font-black text-white text-sm">{profile.tipoSangre}</span>
+                          </div>
+                        </div>
+                      )}
+                      {profile.alergias && (
+                        <div className="px-3 py-1.5 bg-black/40 border border-white/10 rounded-xl">
+                          <span className="block text-[9px] uppercase font-bold text-text-muted">Alergias / Notas</span>
+                          <span className="font-semibold text-white text-xs">{profile.alergias}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
           {/* EDIT FORM MODAL INLINE */}
           {isEditing && (
-            <form onSubmit={handleUpdateProfile} className="mt-8 pt-8 border-t border-white/5 space-y-4">
-              <h3 className="text-lg font-bold text-white mb-4">Editar Garage</h3>
+            <form onSubmit={handleUpdateProfile} className="mt-8 pt-8 border-t border-white/5 space-y-4 text-left">
+              <h3 className="text-lg font-bold text-white mb-4">Editar Garaje & Ficha Biker</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -942,7 +1095,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                     required
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none"
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
                   />
                 </div>
                 <div>
@@ -958,7 +1111,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                         : "@" + val
                       setUsernameInput(cleanVal)
                     }}
-                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none"
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
                   />
                 </div>
                 <div>
@@ -967,7 +1120,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                     type="text"
                     value={ciudad}
                     onChange={(e) => setCiudad(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none"
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
                     placeholder="Ej: Bogotá, Medellín"
                   />
                 </div>
@@ -993,7 +1146,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                     onChange={(e) => setBio(e.target.value)}
                     maxLength={200}
                     rows={3}
-                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none"
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
                     placeholder="Cuéntanos un poco sobre ti y tu moto..."
                   />
                 </div>
@@ -1004,7 +1157,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                     type="text"
                     value={rutasFrecuentes}
                     onChange={(e) => setRutasFrecuentes(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none"
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
                     placeholder="Ej: La Línea, Vía al Llano, Guatavita"
                   />
                 </div>
@@ -1015,8 +1168,112 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                     type="text"
                     value={rutaSonada}
                     onChange={(e) => setRutaSonada(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none"
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
                     placeholder="Ej: Cabo de la Vela, Ushuaia"
+                  />
+                </div>
+
+                {/* Campos de Ficha Médica */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-red-400 mb-1.5 flex items-center gap-1">
+                    <Droplet className="w-3.5 h-3.5" /> Tipo de Sangre
+                  </label>
+                  <input
+                    type="text"
+                    value={tipoSangre}
+                    onChange={(e) => setTipoSangre(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-red-500 focus:outline-none text-white"
+                    placeholder="Ej: O+, A-, AB+"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-red-400 mb-1.5">Alergias / Condiciones Médicas</label>
+                  <input
+                    type="text"
+                    value={alergias}
+                    onChange={(e) => setAlergias(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-red-500 focus:outline-none text-white"
+                    placeholder="Ej: Alérgico a penicilina, ninguna"
+                  />
+                </div>
+
+                {/* Campos de Equipamiento EPP */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-primary-orange mb-1.5">🪖 Casco & Visor</label>
+                  <input
+                    type="text"
+                    value={casco}
+                    onChange={(e) => setCasco(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
+                    placeholder="Ej: Shoei X-Fifteen Visor Fotocromático"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-primary-orange mb-1.5">📻 Intercomunicador</label>
+                  <input
+                    type="text"
+                    value={intercom}
+                    onChange={(e) => setIntercom(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
+                    placeholder="Ej: Cardo Packtalk Edge / Sena 50S"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-primary-orange mb-1.5">🧥 Chaqueta & Airbag</label>
+                  <input
+                    type="text"
+                    value={chaqueta}
+                    onChange={(e) => setChaqueta(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
+                    placeholder="Ej: Alpinestars Tech-Air 5"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-primary-orange mb-1.5">🧤 Guantes & Botas</label>
+                  <input
+                    type="text"
+                    value={guantesBotas}
+                    onChange={(e) => setGuantesBotas(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
+                    placeholder="Ej: Dainese Full Metal 6 + Botas Forma"
+                  />
+                </div>
+
+                {/* Pasaporte Biker */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-amber-400 mb-1.5">🔥 Récord Max Km en 1 Día</label>
+                  <input
+                    type="number"
+                    value={maxKmDia || ""}
+                    onChange={(e) => setMaxKmDia(Number(e.target.value))}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-amber-500 focus:outline-none text-white"
+                    placeholder="Ej: 750"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-blue-400 mb-1.5">🇨🇴 Departamentos Visitados (separados por coma)</label>
+                  <input
+                    type="text"
+                    value={departamentosInput}
+                    onChange={(e) => setDepartamentosInput(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-blue-500 focus:outline-none text-white"
+                    placeholder="Ej: Antioquia, Cundinamarca, Quindío, Santander"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold uppercase text-primary-orange mb-1.5">🏷️ Etiquetas de Estilo de Rodada (separadas por coma)</label>
+                  <input
+                    type="text"
+                    value={estiloTagsInput}
+                    onChange={(e) => setEstiloTagsInput(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
+                    placeholder="Ej: #Curveros, #RutaNocturna, #CaféYCurvas, #Enduro"
                   />
                 </div>
               </div>
@@ -1236,11 +1493,42 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                     <option value="anterior">Anterior (Historial)</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-amber-400 mb-1.5 font-mono">🛢️ Próximo Cambio de Aceite (Km)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="Ej: 15000"
+                    value={motoProximoAceite || ""}
+                    onChange={(e) => setMotoProximoAceite(Number(e.target.value))}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-amber-500 focus:outline-none text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold uppercase text-emerald-400 mb-1.5">🛞 Referencia de Llantas</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Michelin Road 6 / Pirelli Diablo"
+                    value={motoLlantas}
+                    onChange={(e) => setMotoLlantas(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-emerald-500 focus:outline-none text-white"
+                  />
+                </div>
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <label className="block text-xs font-semibold uppercase text-primary-orange mb-1.5">🔊 Sistema de Escape / Sonido</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Akrapovič Slip-On Carbono / Austin Racing"
+                    value={motoEscape}
+                    onChange={(e) => setMotoEscape(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
+                  />
+                </div>
                 <div className="sm:col-span-2 lg:col-span-3">
                   <label className="block text-xs font-semibold uppercase text-text-muted mb-1.5">Mods / Accesorios (Separados por comas)</label>
                   <input
                     type="text"
-                    placeholder="Ej: Exhosto Akrapovic, Luces LED, Cúpula touring"
+                    placeholder="Ej: Luces LED, Cúpula touring, Sliders, Quickshifter"
                     value={newMod}
                     onChange={(e) => setNewMod(e.target.value)}
                     className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-sm focus:border-primary-orange focus:outline-none text-white"
@@ -1390,6 +1678,48 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                         <span className="text-xs font-black text-white mt-0.5 block">{moto.kilometraje?.toLocaleString() || 0} km</span>
                       </div>
                     </div>
+
+                    {/* Mantenimiento & Ficha Técnica del Box */}
+                    {(moto.proximoCambioAceiteKm || moto.llantasMarcaModelo || moto.escapeReferencia) && (
+                      <div className="p-3 bg-black/40 border border-white/5 rounded-xl space-y-2 text-xs">
+                        {moto.proximoCambioAceiteKm ? (
+                          <div>
+                            <div className="flex justify-between items-center text-[10px] mb-1">
+                              <span className="text-amber-400 font-bold uppercase flex items-center gap-1">🛢️ Cambio de Aceite</span>
+                              <span className="text-white font-mono">{moto.kilometraje?.toLocaleString()} / {moto.proximoCambioAceiteKm.toLocaleString()} km</span>
+                            </div>
+                            <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${
+                                  (moto.kilometraje || 0) >= moto.proximoCambioAceiteKm
+                                    ? "bg-red-500"
+                                    : (moto.kilometraje || 0) >= moto.proximoCambioAceiteKm - 500
+                                    ? "bg-amber-500 animate-pulse"
+                                    : "bg-emerald-500"
+                                }`}
+                                style={{
+                                  width: `${Math.min(100, Math.max(5, ((moto.kilometraje || 0) / moto.proximoCambioAceiteKm) * 100))}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {moto.llantasMarcaModelo && (
+                          <div className="flex items-center gap-1 text-[11px] text-text-muted">
+                            <span>🛞 Llantas:</span>
+                            <span className="font-semibold text-white truncate">{moto.llantasMarcaModelo}</span>
+                          </div>
+                        )}
+
+                        {moto.escapeReferencia && (
+                          <div className="flex items-center gap-1 text-[11px] text-text-muted">
+                            <span>🔊 Escape:</span>
+                            <span className="font-semibold text-primary-orange font-mono truncate">{moto.escapeReferencia}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Mods */}
                     {moto.mods && moto.mods.length > 0 && (

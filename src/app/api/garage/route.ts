@@ -19,6 +19,15 @@ const profileUpdateSchema = z.object({
   tipoRider: z.enum(["TOURING", "URBANO", "OFFROAD", "SPORT", "CUSTOM"]).optional(),
   fotoPerfil: z.string().max(500, "La foto de perfil no puede superar los 500 caracteres").optional().nullable(),
   fotoPortada: z.string().max(500, "La foto de portada no puede superar los 500 caracteres").optional().nullable(),
+  tipoSangre: z.string().optional().nullable(),
+  alergias: z.string().optional().nullable(),
+  casco: z.string().optional().nullable(),
+  intercom: z.string().optional().nullable(),
+  chaqueta: z.string().optional().nullable(),
+  guantesBotas: z.string().optional().nullable(),
+  maxKmDia: z.number().optional().nullable(),
+  departamentosVisitados: z.array(z.string()).optional(),
+  estiloTags: z.array(z.string()).optional(),
 })
 
 export async function GET(req: Request) {
@@ -202,7 +211,11 @@ export async function PUT(req: Request) {
       )
     }
 
-    const { nombre, username, bio, ciudad, rutasFrecuentes, rutaSonada, tipoRider, fotoPerfil, fotoPortada } = parsed.data
+    const {
+      nombre, username, bio, ciudad, rutasFrecuentes, rutaSonada, tipoRider,
+      fotoPerfil, fotoPortada, tipoSangre, alergias, casco, intercom, chaqueta,
+      guantesBotas, maxKmDia, departamentosVisitados, estiloTags
+    } = parsed.data
 
     if (nombre !== undefined) {
       if (nombre === null || nombre.trim().length < 2) {
@@ -233,6 +246,15 @@ export async function PUT(req: Request) {
     if (tipoRider !== undefined) updateData.tipoRider = tipoRider
     if (fotoPerfil !== undefined) updateData.fotoPerfil = fotoPerfil
     if (fotoPortada !== undefined) updateData.fotoPortada = fotoPortada
+    if (tipoSangre !== undefined) updateData.tipoSangre = tipoSangre
+    if (alergias !== undefined) updateData.alergias = alergias
+    if (casco !== undefined) updateData.casco = casco
+    if (intercom !== undefined) updateData.intercom = intercom
+    if (chaqueta !== undefined) updateData.chaqueta = chaqueta
+    if (guantesBotas !== undefined) updateData.guantesBotas = guantesBotas
+    if (maxKmDia !== undefined) updateData.maxKmDia = maxKmDia
+    if (departamentosVisitados !== undefined) updateData.departamentosVisitados = departamentosVisitados
+    if (estiloTags !== undefined) updateData.estiloTags = estiloTags
 
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },

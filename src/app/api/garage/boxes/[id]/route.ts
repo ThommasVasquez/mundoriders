@@ -15,6 +15,9 @@ const motoUpdateSchema = z.object({
   galeria: z.array(z.string()).optional(),
   mods: z.array(z.string()).optional(),
   kilometraje: z.number().int().nonnegative().optional(),
+  proximoCambioAceiteKm: z.number().int().nonnegative().optional().nullable(),
+  llantasMarcaModelo: z.string().optional().nullable(),
+  escapeReferencia: z.string().optional().nullable(),
   estado: z.enum(["actual", "anterior"]).optional(),
 })
 
