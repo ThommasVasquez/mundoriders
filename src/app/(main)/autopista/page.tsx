@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from "react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import Navbar from "@/components/Navbar"
+import FriendsList from "@/components/FriendsList"
+import SearchModal from "@/components/SearchModal"
 import { useRouter } from "next/navigation"
 import { useNotification } from "@/components/NotificationProvider"
 import { 
@@ -133,6 +135,7 @@ export default function FeedPage() {
   const { data: session } = useSession()
   const router = useRouter()
   const { toast, showAlert } = useNotification()
+  const [isPageSearchOpen, setIsPageSearchOpen] = useState(false)
   const statusInputRef = useRef<HTMLInputElement>(null)
   const [uploadingStatus, setUploadingStatus] = useState(false)
   const [showStoryUploadChoice, setShowStoryUploadChoice] = useState(false)
@@ -827,6 +830,9 @@ export default function FeedPage() {
               </div>
             </div>
           )}
+
+          {/* Friends List Widget */}
+          <FriendsList onOpenSearch={() => setIsPageSearchOpen(true)} />
 
           {/* Quick Info Box */}
           <div className="glass-panel p-5 rounded-2xl shadow-xl space-y-4">
@@ -2453,6 +2459,9 @@ export default function FeedPage() {
         accept="image/*,video/*"
         className="hidden"
       />
+
+      {/* Global Search Modal */}
+      <SearchModal isOpen={isPageSearchOpen} onClose={() => setIsPageSearchOpen(false)} />
     </div>
   )
 }
